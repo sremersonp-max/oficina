@@ -140,25 +140,13 @@
             color: #7f8c8d;
             font-size: 14px;
         }
-
-        .empresa-info {
-            background: rgba(255,255,255,0.1);
-            padding: 10px;
-            border-radius: 8px;
-            margin-top: 10px;
-            font-size: 0.9rem;
-        }
     </style>
 </head>
 <body>
     <div class="login-container">
         <div class="login-header">
-            <h1>🏭 OFICINA DA FAMÍLIA</h1>
-            <p>Sistema de Gestão - Esquadrias</p>
-            <div class="empresa-info">
-                <div>📞 (42) 99960-8330</div>
-                <div>📍 Rua Elias Calisto, 669 - Ipiranga/PR</div>
-            </div>
+            <h1>🏭 SISTEMA ESQUADRIAS</h1>
+            <p>Gestão de Orçamentos e Estoque</p>
         </div>
 
         <div class="login-content">
@@ -255,9 +243,9 @@
                 
                 mostrarAlerta('✅ Login realizado com sucesso!', 'success');
                 
-                // Redirecionar para o sistema - AGORA PARA COMECO.HTML
+                // Redirecionar para o sistema
                 setTimeout(() => {
-                    window.location.href = 'comeco.html';
+                    window.location.href = 'index.html';
                 }, 1000);
 
             } catch (error) {
@@ -300,9 +288,9 @@
                     
                     mostrarAlerta('✅ Login realizado com sucesso!', 'success');
                     
-                    // Redirecionar - AGORA PARA COMECO.HTML
+                    // Redirecionar
                     setTimeout(() => {
-                        window.location.href = 'comeco.html';
+                        window.location.href = 'index.html';
                     }, 1000);
                 } else {
                     mostrarAlerta('❌ E-mail ou senha incorretos', 'error');
@@ -322,9 +310,9 @@
                     usuarioLogado = JSON.parse(usuarioSalvo);
                     console.log('✅ Usuário já logado:', usuarioLogado);
                     
-                    // Redirecionar automaticamente se já estiver logado - AGORA PARA COMECO.HTML
+                    // Redirecionar automaticamente se já estiver logado
                     setTimeout(() => {
-                        window.location.href = 'comeco.html';
+                        window.location.href = 'index.html';
                     }, 500);
                     
                 } catch (error) {
@@ -337,7 +325,7 @@
         function fazerLogout() {
             localStorage.removeItem('usuarioLogado');
             localStorage.removeItem('token');
-            window.location.href = 'index.html';
+            window.location.href = 'login.html';
         }
 
         // =============================================================================
@@ -361,7 +349,7 @@
         window.verificarAutenticacao = function() {
             const usuario = localStorage.getItem('usuarioLogado');
             if (!usuario) {
-                window.location.href = 'index.html';
+                window.location.href = 'login.html';
                 return null;
             }
             return JSON.parse(usuario);

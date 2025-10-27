@@ -1,0 +1,39 @@
+--- CONTEXTO MESTRE DO PROJETO DE ESQUADRIAS ---
+1. STACK: HTML, CSS, JavaScript (Vanilla) + Supabase (PostgreSQL)
+2. OBJETIVO: Sistema de Orçamento e Gestão de Estoque/Pedidos focado em Esquadrias.
+3. PRÓXIMA TAREFA: [DEFINIR AQUI A SUA PRÓXIMA TAREFA DE DESENVOLVIMENTO]
+
+4. ARQUIVOS DISPONÍVEIS:
+   - estoque.html
+   - index.html
+   - pedidos.html
+   - orcamento.HTML
+   - produtos.html
+   - styles.css
+   - config.js (Com chaves Supabase e funções CRUD)
+   - pedido_tempera.html (Módulo de cálculo de vidros)
+
+5. ESTRUTURA COMPLETA DO BANCO DE DADOS (15 Tabelas):
+
+--- DICIONÁRIOS ---
+- categorias: id (PK), nome, descricao, data_criacao
+- cores: id (PK), nome, data_criacao
+- linhas: id (PK), nome, descricao, data_criacao (Séries de Perfis)
+- produto_categorias: id (PK), nome, descricao, data_criacao, ativo (Ex: Janela, Porta)
+
+--- ESTOQUE E ITENS ---
+- itens: id (PK), nome, descricao, quantidade_estoque, quantidade_minima, unidade_medida, preco_custo, preco_venda, categoria_id (FK), unidade_venda, peso_por_unidade, comprimento_por_unidade, preco_por_kg, preco_por_metro, data_cadastro, ativo, variacoes, linha_id (FK).
+- item_variacoes: id (PK), item_id (FK), preco_venda, quantidade_estoque, sku, data_criacao, cor_id (FK).
+- movimentacoes_estoque: id (PK), item_id (FK p/ variacao_id), tipo, quantidade, motivo, orcamento_id (FK), produto_nome, estoque_anterior, estoque_atual, data_movimentacao.
+- historico_baixas_estoque: id (PK), orcamento_id (FK), data_processamento, baixas_processadas, erros, detalhes (JSONB do log).
+
+--- PRODUTOS/RECEITAS ---
+- produtos: id (PK), nome, descricao, categoria_id (FK), itens_composicao (JSONB[]), data_criacao, data_atualizacao, ativo, tipo_calculo_vidro.
+- produto_vidros: id (PK), produto_id (FK), nome_peca, formula_largura, formula_altura, descricao, ordem, created_at, cor_indicativa, posicao_x, posicao_y, largura_svg, altura_svg, tipo_peca, url_imagem_peca (Fórmulas e Layout Visual).
+
+--- VENDAS/COMPRAS E USUÁRIOS ---
+- orcamentos: id (PK), cliente, telefone, localizacao, observacoes, data, status, produtos (JSONB), total, margem, data_criacao, data_atualizacao, estoque_baixado, data_baixa_estoque, itens_avulsos (JSONB), selecoesgrupo (JSONB), subtotal, desconto, custototal, margemlucro, totalvenda.
+- pedidos: id (PK), fornecedor, nota_fiscal, status, data_criacao, data_conclusao, data_atualizacao, usuario_id (FK), observacoes.
+- pedido_itens: id (PK), pedido_id (FK), variacao_id (FK), quantidade_pedida, quantidade_recebida.
+- clientes: id (PK), nome, email, telefone, cpf_cnpj, endereco, ativo, data_cadastro.
+- usuarios: id (UUID, PK), nome, email, data_cadastro, ultimo_login, ativo, perfil, created_at, updated_at.
