@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Folha de Corte - Oficina da Familia</title>
+    <link rel="stylesheet" href="styles.css"> <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* CSS customizado para a folha de corte */
+        body { background: #f4f4f9; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); padding: 30px; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .orcamento-selector { display: flex; gap: 10px; margin-bottom: 30px; align-items: stretch; }
+        .orcamento-selector > div { flex: 1; }
+        .orcamento-selector button { flex-shrink: 0; align-self: flex-end; }
+        
+        #listaCortes { margin-top: 30px; border-top: 2px solid #3498db; padding-top: 20px; }
+        .perfil-group { border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
+        .perfil-header { background: #3498db; color: white; padding: 15px; font-size: 1.2em; display: flex; justify-content: space-between; align-items: center; }
+        .perfil-details table { width: 100%; border-collapse: collapse; }
+        .perfil-details th, .perfil-details td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        .perfil-details th { background: #f8f9fa; font-weight: 600; }
+        .corte-line { display: flex; justify-content: space-between; padding: 5px 15px; }
+        
+        /* Estilos dos 4 botões */
+        .btn-processar { background: #17a2b8; color: white; padding: 10px 15px; }
+        .btn-print-a4 { background: #3498db; color: white; padding: 10px 15px; }
+        .btn-print-termica { background: #9b59b6; color: white; padding: 10px 15px; }
+        .btn-download-txt { background: #e67e22; color: white; padding: 10px 15px; }
+
+        @media print {
+            .orcamento-selector, .header button, .btn-primary { display: none; }
+            .container { box-shadow: none; border: none; padding: 0; }
+            .perfil-group { page-break-inside: avoid; }
+            body { background: white; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✂️ Folha de Corte por Obra</h1>
+            <p>Selecione um orçamento APROVADO para gerar a lista de cortes de perfis.</p>
+        </div>
+
+        <div class="orcamento-selector">
+            <div>
+                <label for="selectOrcamento">Obra Fechada (Orçamento Aprovado)</label>
+                <select id="selectOrcamento" style="width: 100%; padding: 10px; border-radius: 5px;">
+                    <option value="">Carregando orçamentos...</option>
+                </select>
+            </div>
+            <button class="btn btn-processar" onclick="processarFolhaCorte()">
+                ⚙️ Processar
+            </button>
+            <button class="btn btn-print-a4" onclick="window.print()">
+                🖨️ Imprimir A4
+            </button>
+            <button class="btn btn-print-termica" onclick="abrirImpressaoTermicaCorte()">
+                🖨️ Impressão Térmica
+            </button>
+             <button class="btn btn-download-txt" onclick="gerarArquivoTextoCorte()">
+                ⬇️ Download TXT (Corte)
+            </button>
+        </div>
+        
+        <div id="listaCortes">
+            <p style="text-align: center; color: #7f8c8d;">Nenhum corte processado.</p>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        // =============================================================================
+        // VARIÁVEIS GLOBAIS
+        // =============================================================================
+        let produtosCadastrados = [];
+        let itensPai = [];
+        let variacoesCadastradas = [];
+        let coresCadastradas = [];
+        let orcamentosAprovados = [];
+        let lastProcessedCuts = null; // Armazena o último resultado de corte para os botões de exportação
+
+        // =============================================================================
+        // FUNÇÕES DE CÁLCULO E AUXILIARES
+        // =============================================================================
+
+        // Função para calcular o valor da fórmula (retorna o comprimento em metros)
+        function calcularQuantidadeFormula(formula, L, A) {
+            if (!formula || formula.trim() === '') return 0;
+            const formulaLower = formula.toLowerCase().trim();
+            let expressao = formulaLower.replace(/l/g, L.toString()).replace(/a/g, A.toString());
+            try {
+                expressao = expressao.replace(/^\(|\)$/g, ''); 
+                const resultado = new Function(`return ${expressao}`)();
+                return parseFloat(resultado) || 0;
+            } catch (error) {
+                console.error(`Erro ao avaliar fórmula "${formula}" com L=${L}, A=${A} -> "${expressao}"`, error);
+                return 0; 
+            }
+        }
+        
+        // Helper para determinar a variação correta
+        function determineVariacaoId(itemComp, prodOrc) {
+            const itemPaiId = itemComp.item_id;
+            const tipo = itemComp.tipo_item || 'Outros';
+
+            // 1. Prioriza substituição individual (vidros, puxadores, etc.)
+            if (prodOrc.substituicoes && prodOrc.substituicoes[itemPaiId]) {
+                 return prodOrc.substituicoes[itemPaiId];
+            }
+            
+            // 2. Tenta Cor Geral (Perfis e Acessórios)
+            if ((tipo === 'Perfis' || tipo === 'Acessorios') && prodOrc.corGeralId) {
+                const variacao = variacoesCadastradas.find(v => v.item_id == itemPaiId && v.cor_id == prodOrc.corGeralId);
+                return variacao ? variacao.id : null;
+            }
+            
+            // 3. Pega a variação padrão
+            const variacaoPadrao = variacoesCadastradas.find(v => v.item_id == itemPaiId);
+            return variacaoPadrao ? variacaoPadrao.id : null;
+        }
+
+        // Lógica principal para calcular a folha de corte em MM
+        function gerarFolhaDeCorte(orcamento) {
+            // Map para agrupar cortes: Chave: "NomePerfil | Cor" -> Array de {medida_mm, quantidade, origens}
+            const cortesPorPerfil = new Map();
+            
+            (orcamento.produtos || []).forEach(prodOrc => {
+                if (prodOrc.isAvulso) return;
+                
+                const receita = produtosCadastrados.find(p => p.id == prodOrc.produtoId);
+                if (!receita || !receita.itens_composicao) return;
+                
+                const L = prodOrc.largura || 0; 
+                const A = prodOrc.altura || 0; 
+                const QtdProdutos = prodOrc.quantidade || 1; // Qtd de janelas/portas no orçamento
+                
+                (receita.itens_composicao || []).forEach(itemComp => {
+                    if (itemComp.tipo_item !== 'Perfis') return; // Filtra apenas Perfis
+                    
+                    const variacaoIdFinal = determineVariacaoId(itemComp, prodOrc);
+                    if (!variacaoIdFinal) return;
+                    
+                    const variacao = variacoesCadastradas.find(v => v.id == variacaoIdFinal);
+                    const itemPai = itensPai.find(p => p.id == itemComp.item_id);
+                    const cor = coresCadastradas.find(c => c.id == variacao?.cor_id);
+                    
+                    if (!itemPai || !cor) return;
+
+                    // CORREÇÃO APLICADA AQUI: 
+                    // totalLength agora é renomeado para medidaUnitariaMetros, 
+                    // pois a fórmula deve retornar o tamanho de UMA peça.
+                    const medidaUnitariaMetros = calcularQuantidadeFormula(itemComp.formula, L, A); 
+                    const numPecas = itemComp.quantidade_formula || 1; 
+
+                    if (numPecas <= 0 || medidaUnitariaMetros <= 0) return; 
+
+                    // NÃO É MAIS NECESSÁRIO DIVIDIR, POIS medidaUnitariaMetros JÁ É O COMPRIMENTO
+                    // const medidaUnitaria = totalLength / numPecas; // LINHA REMOVIDA/IGNORADA
+                    
+                    const medidaUnitariaMM = Math.round(medidaUnitariaMetros * 1000); // Medida em mm (inteiro)
+                    
+                    const quantidadeTotalCorte = numPecas * QtdProdutos; // Qtd. de peças totais necessárias
+                    
+                    const chave = `${itemPai.nome} | ${cor.nome}`;
+
+                    const grupoCortes = cortesPorPerfil.get(chave) || [];
+                    
+                    // Procura se já existe um corte com a mesma medida
+                    const corteExistente = grupoCortes.find(c => c.medida_mm === medidaUnitariaMM);
+
+                    if (corteExistente) {
+                        corteExistente.quantidade += quantidadeTotalCorte;
+                        corteExistente.origens.push({ 
+                            produtoNome: receita.nome,
+                            largura: L, altura: A, qtdProdutos: QtdProdutos
+                        });
+                    } else {
+                        grupoCortes.push({
+                            medida_mm: medidaUnitariaMM,
+                            quantidade: quantidadeTotalCorte,
+                            origens: [{ 
+                                produtoNome: receita.nome,
+                                largura: L, altura: A, qtdProdutos: QtdProdutos
+                            }]
+                        });
+                    }
+
+                    cortesPorPerfil.set(chave, grupoCortes);
+                });
+            });
+
+            cortesPorPerfil.forEach(cortes => {
+                cortes.sort((a, b) => b.medida_mm - a.medida_mm);
+            });
+            
+            return cortesPorPerfil;
+        }
+
+        // Função auxiliar de alinhamento (pad) - Essencial para o TXT
+        function pad(str, len, align = 'right') {
+            str = String(str);
+            if (str.length >= len) return str.substring(0, len);
+            const padding = ' '.repeat(len - str.length);
+            return align === 'left' ? str + padding : padding + str;
+        }
+
+        // =============================================================================
+        // FUNÇÕES DE EXPORTAÇÃO (TXT) E IMPRESSÃO (TÉRMICA)
+        // =============================================================================
+
+        /**
+         * NOVO: Gera um arquivo de texto (.txt) para download com a lista de cortes.
+         */
+        function gerarArquivoTextoCorte() {
+            if (!lastProcessedCuts || lastProcessedCuts.size === 0) {
+                alert('❌ Processo o orçamento primeiro (botão "⚙️ Processar").');
+                return;
+            }
+            
+            const orcamentoId = document.getElementById('selectOrcamento').value;
+            const orcamento = orcamentosAprovados.find(o => o.id == orcamentoId);
+
+            // --- Geração do Conteúdo TXT (Formato Texto Puro) ---
+            let outputText = '';
+            outputText += "========================================\n";
+            outputText += pad("LISTA DE CORTES - OFICINA", 40, 'center') + "\n";
+            outputText += "========================================\n\n";
+
+            outputText += "CLIENTE: " + (orcamento.cliente || '---').toUpperCase().substring(0, 31) + "\n";
+            outputText += "LOCAL:   " + (orcamento.localizacao || '---').toUpperCase().substring(0, 31) + "\n";
+            outputText += "ORC # " + (orcamento.id || 'N/A') + " | DATA: " + (orcamento.data || '---') + "\n";
+            outputText += "\n========================================\n";
+            
+            const chavesPerfil = Array.from(lastProcessedCuts.keys()).sort();
+            
+            if (chavesPerfil.length === 0) {
+                outputText += pad("NENHUM PERFIL PARA CORTE ENCONTRADO", 40, 'center') + "\n";
+            } else {
+                outputText += " " + pad("MEDIDA(MM)", 15, 'center') + pad("QTD", 10, 'center') + "  PERFIL/COR\n";
+                outputText += "----------------------------------------\n";
+
+                chavesPerfil.forEach(chave => {
+                    const cortesDoPerfil = lastProcessedCuts.get(chave);
+                    const [nomePerfil, cor] = chave.split(' | ');
+                    
+                    outputText += "\n [" + (nomePerfil + ' - ' + cor).toUpperCase().substring(0, 37) + " ]\n";
+                    
+                    cortesDoPerfil.forEach(corte => {
+                        const medidaStr = corte.medida_mm.toString();
+                        const qtdStr = corte.quantidade.toString();
+
+                        // Formato: [QTD] x [MEDIDA]
+                        outputText += pad(qtdStr, 10, 'right') + " x " + pad(medidaStr, 15, 'right') + " MM\n";
+                    });
+                });
+            }
+
+            outputText += "\n========================================\n";
+            outputText += pad("FIM DO RELATÓRIO", 40, 'center') + "\n";
+            
+            // --- DOWNLOAD DO ARQUIVO ---
+            const filename = `CORTES_${orcamento.cliente.replace(/[^a-zA-Z0-9]/g, '_')}_${orcamento.id}.txt`;
+            const blob = new Blob([outputText], { type: 'text/plain;charset=utf-8' });
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            alert(`✅ Arquivo ${filename} gerado com sucesso!`);
+        }
+
+
+        /**
+         * Prepara os dados do corte e abre a janela de impressão térmica.
+         */
+        function abrirImpressaoTermicaCorte() {
+            if (!lastProcessedCuts || lastProcessedCuts.size === 0) {
+                alert('❌ Processo o orçamento primeiro (botão "⚙️ Processar").');
+                return;
+            }
+            
+            // Converte o Map (Mapas não são serializáveis para JSON) para um Objeto JS
+            const serializableCuts = {};
+            lastProcessedCuts.forEach((value, key) => {
+                serializableCuts[key] = value;
+            });
+            
+            const orcamentoId = document.getElementById('selectOrcamento').value;
+            const orcamento = orcamentosAprovados.find(o => o.id == orcamentoId);
+
+            const printData = {
+                orcamentoInfo: {
+                    id: orcamento.id,
+                    cliente: orcamento.cliente,
+                    localizacao: orcamento.localizacao,
+                    data: orcamento.data
+                },
+                cortes: serializableCuts // Dados de corte serializados
+            };
+
+            // Salva os dados no localStorage
+            localStorage.setItem('cortesParaImpressao', JSON.stringify(printData));
+            
+            // Abre o arquivo de impressão térmica
+            const printWindow = window.open('relatorios_corte_termica.html', '_blank'); 
+
+            if (!printWindow || printWindow.closed || typeof printWindow.closed=='undefined') {
+                alert('⚠️ O bloqueador de pop-up do seu navegador impediu a abertura da janela de impressão. Desative-o e tente novamente.');
+            }
+        }
+
+
+        // =============================================================================
+        // FUNÇÕES DE CARREGAMENTO DE DADOS (Inalteradas)
+        // =============================================================================
+        async function carregarProdutos() {
+            try {
+                const { data, error } = await supabase.from('produtos').select(`*, produto_categorias(nome)`).eq('ativo', true);
+                if (error) throw error;
+                produtosCadastrados = data || [];
+            } catch (error) {
+                console.error('❌ Erro ao carregar produtos (receitas):', error);
+                produtosCadastrados = [];
+            }
+        }
+
+        async function carregarDadosEstoque() {
+            try {
+                const [itensPaiRes, variacoesRes, coresRes] = await Promise.all([
+                    supabase.from('itens').select('*, categorias(nome), linhas(nome)').eq('ativo', true),
+                    supabase.from('item_variacoes').select('*, cores(nome)'),
+                    supabase.from('cores').select('*')
+                ]);
+                if (itensPaiRes.error) throw itensPaiRes.error;
+                if (variacoesRes.error) throw variacoesRes.error;
+                if (coresRes.error) throw coresRes.error;
+                
+                itensPai = itensPaiRes.data || [];
+                variacoesCadastradas = variacoesRes.data || [];
+                coresCadastradas = coresRes.data || [];
+            } catch (error) {
+                console.error('❌ Erro ao carregar dados do estoque:', error);
+                throw error;
+            }
+        }
+        
+        async function carregarOrcamentosAprovados() {
+            try {
+                const { data, error } = await supabase
+                    .from('orcamentos')
+                    .select('id, cliente, localizacao, data, produtos, margem, total') 
+                    .eq('status', 'aprovado')
+                    .order('data', { ascending: false });
+                
+                if (error) throw error;
+                orcamentosAprovados = data || [];
+                renderizarListaOrcamentos();
+            } catch (error) {
+                console.error('❌ Erro ao carregar orçamentos aprovados:', error);
+                document.getElementById('selectOrcamento').innerHTML = '<option value="">Erro ao carregar</option>';
+            }
+        }
+
+        function renderizarListaOrcamentos() {
+            const select = document.getElementById('selectOrcamento');
+            select.innerHTML = '<option value="">Selecione um Orçamento...</option>';
+            
+            orcamentosAprovados.forEach(orc => {
+                let dataF = 'S/ Data';
+                try {
+                    const [ano, mes, dia] = orc.data.split('-');
+                    if(dia && mes && ano) dataF = `${dia}/${mes}/${ano}`;
+                } catch {}
+                
+                const option = document.createElement('option');
+                option.value = orc.id;
+                option.textContent = `Obra #${orc.id}: ${orc.cliente} (${orc.localizacao || 'S/ Local'}) - ${dataF}`;
+                select.appendChild(option);
+            });
+
+            if (orcamentosAprovados.length === 0) {
+                select.innerHTML = '<option value="">Nenhum orçamento aprovado encontrado.</option>';
+            }
+        }
+        
+        // =============================================================================
+        // FUNÇÃO PRINCIPAL DE PROCESSAMENTO E RENDERIZAÇÃO
+        // =============================================================================
+
+        function processarFolhaCorte() {
+            const orcamentoId = document.getElementById('selectOrcamento').value;
+            if (!orcamentoId) {
+                alert('Selecione um orçamento aprovado.');
+                return;
+            }
+
+            const orcamento = orcamentosAprovados.find(o => o.id == orcamentoId);
+            if (!orcamento) {
+                alert('Erro: Orçamento não encontrado ou removido.');
+                return;
+            }
+
+            const dadosCorte = gerarFolhaDeCorte(orcamento);
+            lastProcessedCuts = dadosCorte;
+            renderizarFolhaDeCorte(dadosCorte, orcamento);
+        }
+        
+        function renderizarFolhaDeCorte(dadosCorte, orcamento) {
+            const container = document.getElementById('listaCortes');
+            let dataF = 'S/ Data';
+            try {
+                const [ano, mes, dia] = orcamento.data.split('-');
+                if(dia && mes && ano) dataF = `${dia}/${mes}/${ano}`;
+            } catch {}
+
+            let html = `<h2 style="margin-bottom: 20px;">Folha de Corte - Obra: ${orcamento.cliente} (#${orcamento.id})</h2>
+                        <p style="margin-bottom: 20px; color: #7f8c8d;">Data do Orçamento: ${dataF} | Localização: ${orcamento.localizacao || 'Não informada'}</p>`;
+
+            if (dadosCorte.size === 0) {
+                 html += '<p style="text-align: center; color: #7f8c8d;">Nenhum perfil de alumínio encontrado para corte neste orçamento (ou todos os produtos são avulsos/sem receita).</p>';
+            } else {
+                
+                const perfisOrdenados = Array.from(dadosCorte.entries()).sort(([chaveA], [chaveB]) => {
+                    return chaveA.localeCompare(chaveB);
+                });
+
+                perfisOrdenados.forEach(([chave, cortes]) => {
+                    const [nomePerfil, cor] = chave.split(' | ');
+                    
+                    html += `
+                        <div class="perfil-group">
+                            <div class="perfil-header">
+                                <span>Perfil: ${nomePerfil}</span>
+                                <span>Cor: ${cor}</span>
+                            </div>
+                            <div class="perfil-details">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 15%;">Qtd. Total</th>
+                                            <th style="width: 20%;">Medida de Corte (mm)</th>
+                                            <th>Produtos de Origem</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                    `;
+                    
+                    cortes.forEach(corte => {
+                        const origensDetalhe = corte.origens.map(o => 
+                            `${o.qtdProdutos}x ${o.produtoNome} (${o.largura}x${o.altura}m)`
+                        ).join('; ');
+                        
+                        html += `
+                            <tr>
+                                <td style="font-weight: bold; color: #e74c3c;">${corte.quantidade}</td>
+                                <td style="font-family: monospace; font-size: 1.1em;">${corte.medida_mm}</td>
+                                <td style="font-size: 0.9em; color: #7f8c8d;">${origensDetalhe}</td>
+                            </tr>
+                        `;
+                    });
+
+                    html += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            container.innerHTML = html;
+        }
+
+
+        // =============================================================================
+        // INICIALIZAÇÃO
+        // =============================================================================
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log("🚀 Iniciando sistema de Folha de Corte...");
+            
+            try {
+                await Promise.all([
+                    carregarProdutos(),
+                    carregarDadosEstoque()
+                ]);
+                await carregarOrcamentosAprovados();
+                console.log("✅ Sistema de Folha de Corte pronto!");
+            } catch (error) {
+                console.error("❌ Erro na inicialização:", error);
+                document.getElementById('selectOrcamento').innerHTML = 
+                    '<option value="">Erro ao carregar dados.</option>';
+            }
+        });
+    </script>
+</body>
+</html>

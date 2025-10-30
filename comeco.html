@@ -158,14 +158,12 @@
 </head>
 <body>
     <div class="container">
-        <!-- Verificação de Login -->
         <script>
             if (!localStorage.getItem('usuarioLogado')) {
                 window.location.href = 'index.html';
             }
         </script>
 
-        <!-- Hero Section -->
         <div class="hero-section">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <h1>🏭 Oficina da Família</h1>
@@ -179,7 +177,6 @@
             </div>
         </div>
 
-        <!-- Estatísticas Rápidas -->
         <div class="stats-grid" id="statsContainer">
             <div class="stat-card">
                 <span class="stat-number" id="totalProdutos">0</span>
@@ -199,89 +196,55 @@
             </div>
         </div>
 
-        <!-- Módulos do Sistema -->
         <div class="grid-mobile">
             <a href="orcamento.html" class="feature-card">
                 <div class="icon-large">📋</div>
                 <h3>Orçamentos</h3>
-                <p>Crie, edite e gerencie orçamentos com sistema de cálculos automáticos</p>
-                <div class="text-success" style="margin-top: 12px;">
-                    <small>⚡ Cálculos automáticos • 📊 Substituição de itens</small>
-                </div>
+                
+                
             </a>
             
             <a href="produtos.html" class="feature-card">
                 <div class="icon-large">🧮</div>
                 <h3>Produtos</h3>
-                <p>Gerencie composições de produtos com fórmulas de cálculo</p>
-                <div class="text-success" style="margin-top: 12px;">
-                    <small>🔧 Composições • 📐 Fórmulas • 🔄 Substituíveis</small>
-                </div>
+              
             </a>
             
             <a href="estoque.html" class="feature-card">
                 <div class="icon-large">📦</div>
                 <h3>Estoque</h3>
-                <p>Controle completo de itens com alertas e variações de cores</p>
-                <div class="text-success" style="margin-top: 12px;">
-                    <small>📈 Controle • ⚠️ Alertas • 🎨 Variações</small>
-                </div>
+               
             </a>
 
             <a href="pedidos.html" class="feature-card">
                 <div class="icon-large">🚚</div>
                 <h3>Pedidos</h3>
-                <p>Gestão de pedidos de compra e recebimento de mercadorias</p>
-                <div class="text-success" style="margin-top: 12px;">
-                    <small>📥 Recebimento • 📊 Controle • 📦 Estoque</small>
-                </div>
+               
             </a>
 
             <a href="pedido_tempera.html" class="feature-card">
                 <div class="icon-large">🔍</div>
                 <h3>Pedido Tempera</h3>
-                <p>Cálculo de vidros para tempera com fórmulas específicas</p>
-                <div class="text-success" style="margin-top: 12px;">
-                    <small>📐 Fórmulas • 🎨 Visualização • 📄 PDF</small>
-                </div>
+             
             </a>
-            <!-- BOTÃO ADICIONAL PARA pedido_tempera.html -->
-            <div style="text-align: center; margin-top: 20px; grid-column: span 3;">
-                <a href="pedido_tempera.html" class="btn btn-primary" style="font-size: 1.1rem; font-weight: bold; color: white; text-decoration: none; padding: 12px 25px;">
-                    Abrir Pedido Tempera
-                </a>
-            </div>
+
+            <a href="folha_corte.html" class="feature-card">
+                <div class="icon-large">📏</div>
+                <h3>Folha de Corte</h3>
+             
+            </a>
+            
+           
 
             <a href="relatorios_orcamentos_termica.html" class="feature-card">
                 <div class="icon-large">🖨️</div>
-                <h3>Impressão Térmica</h3>
-                <p>Sistema de etiquetas e impressão para orçamentos</p>
-                <div class="text-success" style="margin-top: 12px;">
-                    <small>📟 80mm/60mm • 🏷️ Etiquetas • 📄 PDF</small>
-                </div>
+                <h3>Impressão Térmica orçamentos</h3>
+                
             </a>
         </div>
 
-        <!-- Ações Rápidas -->
-        <div class="quick-actions">
-            <h3 class="text-center mb-4" style="color: #2c3e50;">🚀 Ações Rápidas</h3>
-            <div class="grid-mobile">
-                <button class="btn btn-primary btn-mobile" onclick="window.open('orcamento.html', '_self')">
-                    ➕ Novo Orçamento
-                </button>
-                <button class="btn btn-success btn-mobile" onclick="window.open('produtos.html', '_self')">
-                    🧮 Ver Produtos
-                </button>
-                <button class="btn btn-info btn-mobile" onclick="window.open('estoque.html', '_self')">
-                    📦 Ver Estoque
-                </button>
-                <button class="btn btn-warning btn-mobile" onclick="verAlertas()">
-                    ⚠️ Ver Alertas
-                </button>
-            </div>
-        </div>
+        
 
-        <!-- Últimos Orçamentos -->
         <div class="card" style="margin-top: 25px;">
             <h3>📋 Últimos Orçamentos</h3>
             <div id="ultimosOrcamentos">
@@ -290,7 +253,6 @@
         </div>
     </div>
 
-    <!-- Incluir Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
     

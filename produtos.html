@@ -142,12 +142,22 @@
         <div class="card" style="margin-bottom: 25px;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
                 <h1>🧮 Cadastro de Produtos Compostos</h1>
-                <div style="display: flex; gap: 10px;">
-                    <a href="index.html" class="btn btn-secondary">🏠 Início</a>
-                    <a href="estoque.html" class="btn btn-primary">📦 Estoque</a>
-                    <a href="orcamento.html" class="btn btn-success">📋 Orçamentos</a>
-                    <a href="pedido_tempera.html" class="btn btn-info">🔍 Pedido Tempera</a>
+                
+                <div style="display: flex; flex-direction: column; gap: 10px; align-items: flex-end;">
+                    
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end;">
+                        <a href="index.html" class="btn btn-secondary">🏠 Início</a>
+                        <a href="estoque.html" class="btn btn-primary">📦 Estoque</a>
+                        <a href="orcamento.html" class="btn btn-success">📋 Orçamentos</a>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end;">
+                        <a href="pedido_tempera.html" class="btn btn-info">🔍 Pedido Tempera</a>
+                        <a href="folha_corte.html" class="btn btn-info">📄 Folha de Corte</a>
+                        <a href="relatorios_estoque.html" class="btn btn-info">📊 Relatório Estoque</a>
+                    </div>
                 </div>
+
             </div>
         </div>
 
@@ -295,7 +305,6 @@
                                onchange="atualizarFormulaVidro('${idFormula}', 'formula_altura', this.value)">
                     </div>
                     
-                    <!-- NOVO CAMPO: Quantidade de Peças -->
                     <div class="form-group">
                         <label>Qtd. Peças</label>
                         <input type="number" value="${formulaData.quantidade_pecas}" 

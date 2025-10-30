@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orçamento - Oficina da Familia</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .actions {
+            background: #2c3e50;
+            padding: 15px 25px;
+            text-align: right;
+        }
+        .actions button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .actions button:hover {
+            background-color: #2980b9;
+        }
+        .content {
+            padding: 30px 40px;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #3498db;
+            margin-bottom: 20px;
+        }
+        header .empresa-dados h1 {
+            color: #2c3e50;
+            font-size: 26px;
+            margin: 0;
+        }
+        header .empresa-dados p {
+            font-size: 14px;
+            color: #555;
+            margin-top: 5px;
+        }
+        header .orcamento-meta {
+            text-align: right;
+        }
+        header .orcamento-meta h2 {
+            font-size: 20px;
+            color: #3498db;
+            margin: 0;
+        }
+        header .orcamento-meta p {
+            font-size: 14px;
+            color: #555;
+            margin-top: 5px;
+        }
+        .cliente-info {
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .cliente-info h3 {
+            color: #2c3e50;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        .cliente-info p {
+            font-size: 14px;
+            color: #333;
+        }
+        .itens-section table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .itens-section th, .itens-section td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+            text-align: left;
+        }
+        .itens-section th {
+            background-color: #ecf0f1;
+            color: #7f8c8d;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .itens-section td {
+            font-size: 14px;
+        }
+        .itens-section .item-nome {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .itens-section .item-detalhes {
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+        .itens-section .col-subtotal, .itens-section .col-unitario {
+            text-align: right;
+            font-weight: 600;
+        }
+        .itens-section .col-unitario {
+            color: #555;
+        }
+        .itens-section .col-subtotal {
+            color: #2980b9;
+        }
+        .sumario {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #3498db;
+            text-align: right;
+        }
+        .sumario h2 {
+            font-size: 22px;
+            color: #2c3e50;
+            margin: 0;
+        }
+        .sumario p {
+            font-size: 14px;
+            color: #555;
+            margin: 0 0 10px 0;
+        }
+        footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 12px;
+            color: #999;
+            text-align: center;
+        }
+
+        /* --- ESTILOS DE IMPRESSÃO --- */
+        @media print {
+            body {
+                background-color: #ffffff;
+                padding: 0;
+            }
+            .container {
+                width: 100%;
+                margin: 0;
+                box-shadow: none;
+                border: none;
+                border-radius: 0;
+            }
+            .actions {
+                display: none;
+            }
+            .content {
+                padding: 10px;
+            }
+            header, .cliente-info, .itens-section {
+                page-break-inside: avoid;
+            }
+            footer {
+                page-break-before: always;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="actions">
+            <button onclick="acionarImpressao()">🖨️ Imprimir / Salvar como PDF</button>
+        </div>
+
+        <div class="content">
+            <header>
+                <div class="empresa-dados">
+                    <h1>Oficina da Familia</h1>
+                    <p>Rua Elias Calisto, 669 - Ipiranga- Parana</p>
+                    <p>Contato: (42) 99960-8330</p>
+                </div>
+                <div class="orcamento-meta">
+                    <h2>ORÇAMENTO</h2>
+                    <p>Data: <span id="dataOrcamento">-</span></p>
+                    <p>Status: <span id="statusOrcamento">-</span></p>
+                </div>
+            </header>
+
+            <section class="cliente-info">
+                <h3>CLIENTE</h3>
+                <p><strong>Nome:</strong> <span id="clienteNome">-</span></p>
+                <p><strong>Telefone:</strong> <span id="clienteTelefone">-</span></p>
+                <p><strong>Localização da Obra:</strong> <span id="clienteLocalizacao">-</span></p>
+            </section>
+
+            <section class="itens-section">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Produto</th>
+                            <th>Detalhes</th>
+                            <th class="col-unitario">Valor Unitário</th>
+                            <th class="col-subtotal">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpoTabelaItens">
+                        </tbody>
+                </table>
+            </section>
+
+            <section class="sumario">
+                <p>Total (Valor de Venda)</p>
+                <h2 id="totalGeral">R$ 0,00</h2>
+            </section>
+            
+             <section class="observacoes" style="margin-top: 20px;">
+                <h3>Observações:</h3>
+                <p id="observacoesOrcamento" style="font-size: 13px; color: #555;">-</p>
+            </section>
+
+            <footer>
+                <p>Obrigado pela preferência!</p>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        function carregarDados() {
+            const dadosJSON = localStorage.getItem('orcamentoParaImpressao');
+            
+            if (!dadosJSON) {
+                document.body.innerHTML = '<h1>Erro: Nenhum dado de orçamento encontrado.</h1><p>Por favor, gere o orçamento novamente.</p>';
+                return;
+            }
+            
+            try {
+                const orcamento = JSON.parse(dadosJSON);
+                const margem = orcamento.margem || 1.0;
+
+                // Preencher Meta
+                document.getElementById('dataOrcamento').textContent = orcamento.data || '-';
+                document.getElementById('statusOrcamento').textContent = orcamento.status || '-';
+
+                // Preencher Cliente
+                document.getElementById('clienteNome').textContent = orcamento.cliente || '-';
+                document.getElementById('clienteTelefone').textContent = orcamento.telefone || '-';
+                document.getElementById('clienteLocalizacao').textContent = orcamento.localizacao || '-';
+                
+                // Observações
+                document.getElementById('observacoesOrcamento').textContent = orcamento.observacoes || '(Nenhuma)';
+
+                // Preencher Itens
+                const corpoTabela = document.getElementById('corpoTabelaItens');
+                corpoTabela.innerHTML = ''; // Limpar
+                
+                (orcamento.produtos || []).forEach(prod => {
+                    const precoVenda = (prod.preco || 0) * margem;
+                    const custoUnit = (prod.quantidade > 0 && prod.preco > 0) ? prod.preco / prod.quantidade : 0;
+                    const vendaUnit = custoUnit * margem;
+                    const vendaSub = (prod.preco || 0) * margem;
+
+                    // NOVO: Usa os campos pré-formatados vindos do localStorage
+                    const nomeProd = prod.nome || 'Produto ?';
+                    const dimensoes = prod.dimensoesImpressao || `Qtd: ${prod.quantidade.toFixed(2)}`;
+                    const detalhes = prod.detalhesImpressao || '-';
+                    
+                    const linhaHTML = `
+                        <tr>
+                            <td>
+                                <div class="item-nome">${nomeProd}</div>
+                                <div class="item-detalhes">${dimensoes} ${prod.isAvulso ? '' : `- Qtd: ${prod.quantidade}`}</div>
+                            </td>
+                            <td>
+                                <div class="item-detalhes">${detalhes}</div>
+                            </td>
+                            <td class="col-unitario">R$ ${vendaUnit.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                            <td class="col-subtotal">R$ ${vendaSub.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        </tr>
+                    `;
+                    corpoTabela.innerHTML += linhaHTML;
+                });
+
+                // Total
+                const totalVenda = (orcamento.total || 0) * margem;
+                document.getElementById('totalGeral').textContent = `R$ ${totalVenda.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+                // Limpar o localStorage para não usar dados antigos
+                localStorage.removeItem('orcamentoParaImpressao');
+
+            } catch (error) {
+                console.error('Erro ao processar dados do orçamento:', error);
+                document.body.innerHTML = `<h1>Erro ao carregar dados.</h1><p>${error.message}</p>`;
+            }
+        }
+        
+        function acionarImpressao() {
+            window.print();
+        }
+
+        // Carregar os dados assim que a página abrir
+        window.addEventListener('DOMContentLoaded', carregarDados);
+    </script>
+</body>
+</html>

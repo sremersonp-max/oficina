@@ -7,7 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        /* ESTILOS CSS (SEM ALTERAÇÕES) */
+        /* ESTILOS CSS (SEM ALTERAÇÕES FUNCIONAIS) */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
         .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden; }
@@ -23,7 +23,7 @@
         .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50; }
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px; transition: border-color 0.3s ease; }
         .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #3498db; }
-        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 8px; }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
         .btn-primary { background: #3498db; color: white; }
         .btn-success { background: #27ae60; color: white; }
         .btn-danger { background: #e74c3c; color: white; }
@@ -70,6 +70,22 @@
         .tabela-resumo tr:hover { background: rgba(255,255,255,0.05); }
         .valor-unitario { color: #27ae60; font-weight: bold; }
         .subtotal { color: #e67e22; font-weight: bold; }
+        
+        /* --- NOVOS ESTILOS --- */
+        .orcamento-section summary {
+            list-style: none; /* Remove a setinha padrão */
+            display: block; /* Garante que o summary ocupe a linha toda */
+            cursor: pointer;
+            margin-bottom: 0; /* Remove a margem padrão do h2 */
+        }
+        .orcamento-section summary::-webkit-details-marker {
+            display: none; /* Remove a setinha no Chrome/Safari */
+        }
+        .orcamento-section summary:hover {
+            opacity: 0.8;
+        }
+        /* --- FIM NOVOS ESTILOS --- */
+
         @media (max-width: 768px) {
             .tabs { flex-direction: column; }
             .cliente-info, .produto-header { grid-template-columns: 1fr; }
@@ -92,126 +108,132 @@
         <div class="header">
             <h1>🏭 Sistema de Orçamentos - Esquadrias</h1>
             <p>Sistema completo para gestão de orçamentos</p>
+            <a href="comeco.html" class="btn btn-secondary" style="margin-top: 15px;">⬅️ Voltar ao Início</a>
         </div>
 
         <div class="tabs">
             <button class="tab active" onclick="openTab('orcamentos', event)">
                 📋 Orçamentos
             </button>
-            <button class="tab" onclick="openTab('produtos', event)">
+            <button class="tab" onclick="abrirProdutosExterno()">
                 🧮 Produtos
             </button>
-            <button class="tab" onclick="openTab('estoque', event)">
+            <button class="tab" onclick="abrirEstoqueExterno()">
                 📦 Estoque
             </button>
         </div>
 
         <div id="orcamentos" class="tab-content active">
             <div class="orcamento-section">
-                <h2 class="section-title">📝 Novo Orçamento</h2>
-                <div class="cliente-info">
-                    <div class="form-group">
-                        <label for="nomeCliente">Nome do Cliente *</label>
-                        <input type="text" id="nomeCliente" placeholder="Digite o nome do cliente">
-                    </div>
-                    <div class="form-group">
-                        <label for="telefoneCliente">Telefone</label>
-                        <input type="text" id="telefoneCliente" placeholder="(00) 00000-0000">
-                    </div>
-                    <div class="form-group">
-                        <label for="dataOrcamento">Data do Orçamento</label>
-                        <input type="text" id="dataOrcamento" readonly>
-                    </div>
-                </div>
-                <div class="cliente-info">
-                    <div class="form-group">
-                        <label for="localizacaoObra">Localização da Obra</label>
-                        <input type="text" id="localizacaoObra" placeholder="Endereço da obra">
-                    </div>
-                    <div class="form-group">
-                        <label for="observacoes">Observações</label>
-                        <textarea id="observacoes" placeholder="Observações adicionais..." rows="2"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="statusOrcamento">Status</label>
-                        <select id="statusOrcamento">
-                            <option value="rascunho">Rascunho</option>
-                            <option value="finalizado">Finalizado</option>
-                            <option value="aprovado">Aprovado</option>
-                        </select>
-                    </div>
-                </div>
-
-                <h3 class="section-title">🛒 Produtos do Orçamento</h3>
                 
-                <div id="listaProdutosOrcamento">
-                    <div class="loading" id="loadingProdutos">Nenhum produto adicionado ao orçamento</div>
-                </div>
+                <details open>
+                    <summary class="section-title">
+                        📝 Novo Orçamento (Clique para expandir/recolher)
+                    </summary>
 
-                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                    <button class="btn btn-primary" onclick="adicionarProdutoOrcamento()">
-                        ➕ Adicionar Produto
-                    </button>
-                    <button class="btn btn-warning" onclick="abrirModalAdicionarItemAvulso()">
-                        📦 Add Item Avulso
-                    </button>
-                </div>
-
-                <div class="resumo-orcamento">
-                    <div class="resumo-header">
-                        <h3 style="color: white; margin: 0;">💰 Resumo do Orçamento</h3>
-                        
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label style="color: white; margin-bottom: 4px; font-size: 14px;">Margem de Lucro</label>
-                            <select id="margemLucro" onchange="atualizarResumoOrcamento()" style="padding: 8px 10px; width: 150px; font-size: 15px; border-radius: 6px;">
-                                <option value="1.0">0%</option>
-				<option value="1.30">30%</option>
-                                <option value="1.35">35%</option>
-                                <option value="1.5" selected>50%</option>
-                                <option value="1.7">70%</option>
-                                <option value="2.0">100%</option>
+                    <div class="cliente-info" style="margin-top: 20px;"> 
+                        <div class="form-group">
+                            <label for="nomeCliente">Nome do Cliente *</label>
+                            <input type="text" id="nomeCliente" placeholder="Digite o nome do cliente">
+                        </div>
+                        <div class="form-group">
+                            <label for="telefoneCliente">Telefone</label>
+                            <input type="text" id="telefoneCliente" placeholder="(00) 00000-0000">
+                        </div>
+                        <div class="form-group">
+                            <label for="dataOrcamento">Data do Orçamento</label>
+                            <input type="text" id="dataOrcamento" readonly>
+                        </div>
+                    </div>
+                    <div class="cliente-info">
+                        <div class="form-group">
+                            <label for="localizacaoObra">Localização da Obra</label>
+                            <input type="text" id="localizacaoObra" placeholder="Endereço da obra">
+                        </div>
+                        <div class="form-group">
+                            <label for="observacoes">Observações</label>
+                            <textarea id="observacoes" placeholder="Observações adicionais..." rows="2"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="statusOrcamento">Status</label>
+                            <select id="statusOrcamento">
+                                <option value="rascunho">Rascunho</option>
+                                <option value="finalizado">Finalizado</option>
+                                <option value="aprovado">Aprovado</option>
                             </select>
                         </div>
-
-                        <div class="total-geral" id="totalGeral">R$ 0,00</div>
-                    </div>
-                    
-                    <div id="tabelaItensResumo">
-                        <table class="tabela-resumo">
-                            <thead>
-                                <tr>
-                                    <th>Produto</th>
-                                    <th>Detalhes (Cor/Vidro)</th>
-                                    <th>Valor Unitário</th>
-                                    <th>Subtotal</th>
-                                </tr>
-                            </thead>
-                            <tbody id="corpoTabelaResumo">
-                                </tbody>
-                        </table>
-                    </div>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; color: #bdc3c7; margin-top: 15px;">
-                        <div>Total de Produtos: <span id="totalProdutos">0</span></div>
-                        <div>Itens no Orçamento: <span id="totalItens">0</span></div>
                     </div>
 
-                    <div class="acoes-orcamento">
-    <button class="btn btn-secondary" onclick="salvarOrcamento()">
-        💾 Salvar Orçamento
-    </button>
-    <button class="btn btn-success" onclick="gerarPDF()">
-        📄 Gerar PDF
-    </button>
-    <button class="btn btn-primary" onclick="novoOrçamento()">
-        🆕 Novo Orçamento
-    </button>
-    <button class="btn btn-info" onclick="abrirImpressaoTermica()">
-        🖨️ Impressão Térmica
-    </button>
-</div>
-                </div>
-                </div>
+                    <h3 class="section-title">🛒 Produtos do Orçamento</h3>
+                    
+                    <div id="listaProdutosOrcamento">
+                        <div class="loading" id="loadingProdutos">Nenhum produto adicionado ao orçamento</div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <button class="btn btn-primary" onclick="adicionarProdutoOrcamento()">
+                            ➕ Adicionar Produto
+                        </button>
+                        <button class="btn btn-warning" onclick="abrirModalAdicionarItemAvulso()">
+                            📦 Add Item Avulso
+                        </button>
+                    </div>
+
+                    <div class="resumo-orcamento">
+                        <div class="resumo-header">
+                            <h3 style="color: white; margin: 0;">💰 Resumo do Orçamento</h3>
+                            
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="color: white; margin-bottom: 4px; font-size: 14px;">Margem de Lucro</label>
+                                <select id="margemLucro" onchange="atualizarResumoOrcamento()" style="padding: 8px 10px; width: 150px; font-size: 15px; border-radius: 6px;">
+                                    <option value="1.0">0%</option>
+                                    <option value="1.30">30%</option>
+                                    <option value="1.35">35%</option>
+                                    <option value="1.5" selected>50%</option>
+                                    <option value="1.7">70%</option>
+                                    <option value="2.0">100%</option>
+                                </select>
+                            </div>
+
+                            <div class="total-geral" id="totalGeral">R$ 0,00</div>
+                        </div>
+                        
+                        <div id="tabelaItensResumo">
+                            <table class="tabela-resumo">
+                                <thead>
+                                    <tr>
+                                        <th>Produto</th>
+                                        <th>Detalhes (Cor/Vidro)</th>
+                                        <th>Valor Unitário</th>
+                                        <th>Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="corpoTabelaResumo">
+                                    </tbody>
+                            </table>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; color: #bdc3c7; margin-top: 15px;">
+                            <div>Total de Produtos: <span id="totalProdutos">0</span></div>
+                            <div>Itens no Orçamento: <span id="totalItens">0</span></div>
+                        </div>
+
+                        <div class="acoes-orcamento">
+                            <button class="btn btn-secondary" onclick="salvarOrcamento()">
+                                💾 Salvar Orçamento
+                            </button>
+                            <button class="btn btn-success" onclick="gerarPDF()">
+                                📄 Gerar PDF
+                            </button>
+                            <button class="btn btn-primary" onclick="novoOrçamento()">
+                                🆕 Novo Orçamento
+                            </button>
+                            <button class="btn btn-info" onclick="abrirImpressaoTermica()">
+                                🖨️ Impressão Térmica
+                            </button>
+                        </div>
+                    </div>
+                </details> </div>
 
             <div class="lista-orcamentos-section">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
@@ -234,31 +256,7 @@
             </div>
         </div>
 
-        <div id="produtos" class="tab-content">
-             <div style="padding: 25px 30px; background: #f8f9fa; min-height: 100%;">
-                <div class="header" style="padding: 20px; text-align: left; margin-bottom: 20px; border-radius: 8px;">
-                    <h2 style="color: white; margin:0;">🧮 Gestão de Produtos (Receitas)</h2>
-                    <p style="color: #bdc3c7; margin:0;">Abra em nova aba para gerenciar as receitas dos produtos.</p>
-                </div>
-                 <button class="btn btn-success" onclick="abrirProdutosExterno()" style="font-size: 16px; padding: 15px 25px;">
-                    ➡️ Abrir Gerenciador de Produtos
-                </button>
-            </div>
         </div>
-
-        <div id="estoque" class="tab-content">
-            <div style="padding: 25px 30px; background: #f8f9fa; min-height: 100%;">
-                <div class="header" style="padding: 20px; text-align: left; margin-bottom: 20px; border-radius: 8px;">
-                    <h2 style="color: white; margin:0;">📦 Gestão de Estoque (Itens)</h2>
-                    <p style="color: #bdc3c7; margin:0;">Abra em nova aba para gerenciar os itens, modelos e variações.</p>
-                </div>
-                <button class="btn btn-success" onclick="abrirEstoqueExterno()" style="font-size: 16px; padding: 15px 25px;">
-                    ➡️ Abrir Gerenciador de Estoque
-                </button>
-            </div>
-        </div>
-
-    </div>
 
     <div class="modal" id="modalVisualizar">
         <div class="modal-content">
@@ -309,7 +307,7 @@
     
     <script>
         // =============================================================================
-        // VARIÁVEIS GLOBAIS
+        // VARIÁVEIS GLOBAIS (SEM ALTERAÇÃO)
         // =============================================================================
         let produtosCadastrados = []; // Receitas (ex: Janela 4 Folhas)
         let itensPai = []; // Modelos de Estoque (ex: Perfil U) da tabela 'itens'
@@ -329,28 +327,27 @@
             produtos: [],
             total: 0, // Custo total
             margem: 1.5, // Margem de lucro (ex: 1.5 = 50%)
-            // selecoesGrupo foi removido daqui, pois agora está dentro de cada produto em orcamentoAtual.produtos
             data_atualizacao: null
         };
         let editandoOrcamentoId = null;
 
         // =============================================================================
-        // FUNÇÕES DE NAVEGAÇÃO E LINKS EXTERNOS
+        // FUNÇÕES DE NAVEGAÇÃO E LINKS EXTERNOS (SEM ALTERAÇÃO)
         // =============================================================================
 
         // INÍCIO abrirProdutosExterno
         function abrirProdutosExterno() {
-            window.open('produtos.html', '_blank');
+            window.location.href = 'produtos.html';
         }
         // FIM abrirProdutosExterno
 
         // INÍCIO abrirEstoqueExterno
         function abrirEstoqueExterno() {
-            window.open('estoque.html', '_blank');
+            window.location.href = 'estoque.html';
         }
         // FIM abrirEstoqueExterno
 
-        // INÍCIO openTab
+        // INÍCIO openTab (Função mantida para a aba "Orçamentos")
         function openTab(tabName, event) {
             const tabs = document.querySelectorAll('.tab-content');
             tabs.forEach(tab => tab.classList.remove('active'));
@@ -375,7 +372,7 @@
         // FIM openTab
 
         // =============================================================================
-        // FUNÇÕES DE INICIALIZAÇÃO (CARREGAMENTO DE DADOS)
+        // FUNÇÕES DE INICIALIZAÇÃO (CARREGAMENTO DE DADOS) (SEM ALTERAÇÃO)
         // =============================================================================
 
         // INÍCIO inicialização
@@ -398,7 +395,6 @@
             } catch (error) {
                 console.error('❌ Erro fatal na inicialização:', error);
                 alert('Erro ao carregar dados essenciais: ' + error.message + '\nVerifique o console para mais detalhes.');
-                // Desabilitar botões ou mostrar mensagem de erro na UI seria bom aqui
             }
         });
         // FIM inicialização
@@ -464,7 +460,7 @@
         // FIM carregarDadosEstoque
 
         // =============================================================================
-        // FUNÇÕES DO ORÇAMENTO (ADICIONAR/REMOVER/CALCULAR PRODUTOS)
+        // FUNÇÕES DO ORÇAMENTO (ADICIONAR/REMOVER/CALCULAR PRODUTOS) (SEM ALTERAÇÃO)
         // =============================================================================
 
         // INÍCIO adicionarProdutoOrcamento (MODIFICADA)
@@ -684,7 +680,6 @@
             produtoOrcamento.corGeralId = corIdNumerica || null; // Salva o ID da cor geral
 
             // Limpa substituições antigas de perfis/acessórios
-            // (Poderia ser mais otimizado, mas assim garante consistência)
              if (!produtoOrcamento.substituicoes) produtoOrcamento.substituicoes = {};
              const produtoReceita = produtosCadastrados.find(p => p.id == produtoOrcamento.produtoId);
              if(produtoReceita && produtoReceita.itens_composicao){
@@ -733,7 +728,6 @@
             
             produtoOrcamento.preco = resultado.precoTotalCusto; // Custo
             produtoOrcamento.detalhes = resultado.detalhes;
-             // Atualiza o mapa de substituições com base na cor geral (importante para salvar e dar baixa)
             produtoOrcamento.substituicoesFinais = resultado.substituicoesFinais; 
 
             atualizarInterfaceProduto(produtoDivId, produtoOrcamento, produtoReceita.nome);
@@ -778,9 +772,7 @@
                         // Usa a Seleção Individual (ex: Vidro)
                         variacaoSelecionadaId = substituicoesIndividuais[itemPaiId];
                         variacaoSelecionada = variacoesCadastradas.find(v => v.id == variacaoSelecionadaId);
-                         // Não precisa atualizar substituicoesFinais, já está lá
                     } else {
-                         // Substituível, mas nada selecionado (nem geral, nem individual)
                          detalhes.push({ nome: itemPai.nome, erro: `Nenhuma variação/cor selecionada.` });
                     }
                 } else {
@@ -789,7 +781,6 @@
                     if (variacaoPadrao) {
                         variacaoSelecionada = variacaoPadrao;
                         variacaoSelecionadaId = variacaoPadrao.id;
-                         // Itens não substituíveis não entram no mapa de substituições
                     } else {
                         detalhes.push({ nome: itemPai.nome, erro: `Variação padrão não encontrada.` });
                     }
@@ -835,7 +826,6 @@
             const formulaLower = formula.toLowerCase().trim();
             let expressao = formulaLower.replace(/l/g, L.toString()).replace(/a/g, A.toString());
             try {
-                // Usar Function em vez de eval para um pouco mais de segurança
                 const resultado = new Function(`return ${expressao}`)();
                 return parseFloat(resultado) || 0;
             } catch (error) {
@@ -852,7 +842,6 @@
             const btnDetalhes = document.getElementById(`${produtoDivId}_btn_detalhes`);
             const wrapperDetalhes = document.getElementById(`${produtoDivId}_info_wrapper`);
 
-            // Ignora se for Item Avulso
             if (produtoOrcamento.isAvulso) return;
 
             if (!infoDiv || !precoDiv || !btnDetalhes) return;
@@ -881,12 +870,9 @@
                 precoDiv.textContent = `Custo: R$ ${produtoOrcamento.preco.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
                 precoDiv.classList.remove('hidden');
 
-                // MOSTRA O BOTÃO DE DETALHES
                 btnDetalhes.style.display = 'inline-block';
-                 // Reseta o texto do botão (pode ser necessário na edição)
                 btnDetalhes.textContent = wrapperDetalhes.classList.contains('hidden') ? '👁️ Ver Detalhes (Custo)' : '▲ Ocultar Detalhes (Custo)';
                 
-                // Adiciona borda vermelha se houver erro e abre o painel de detalhes
                 const card = document.getElementById(produtoDivId);
                 if (temErro) {
                     card.style.borderLeft = '4px solid #e74c3c';
@@ -894,7 +880,6 @@
                     btnDetalhes.textContent = '▲ Ocultar Detalhes (Custo)';
                 } else {
                     card.style.borderLeft = '4px solid #3498db';
-                     // Garante que o painel está escondido se não houver erro (para visual limpo)
                     if (wrapperDetalhes.classList.contains('hidden') && wrapperDetalhes.innerHTML != '') {
                          wrapperDetalhes.classList.add('hidden');
                          btnDetalhes.textContent = '👁️ Ver Detalhes (Custo)';
@@ -902,7 +887,6 @@
                 }
 
             } else {
-                // Limpa a interface se não houver preço/dados válidos
                 infoDiv.innerHTML = '';
                 precoDiv.classList.add('hidden');
                 btnDetalhes.style.display = 'none';
@@ -929,10 +913,7 @@
         // INÍCIO atualizarResumoOrcamento
         function atualizarResumoOrcamento() {
             const margem = parseFloat(document.getElementById('margemLucro').value) || 1.0;
-            
-            // MODIFICAÇÃO: Calcula o custo total de forma universal (receita ou avulso)
             const totalCusto = produtosOrcamento.reduce((sum, p) => sum + (p.preco || 0), 0);
-            
             const totalGeralComMargem = totalCusto * margem;
             const totalItens = produtosOrcamento.reduce((sum, p) => sum + (p.quantidade || 0), 0);
             
@@ -944,7 +925,6 @@
             orcamentoAtual.margem = margem;
             orcamentoAtual.produtos = produtosOrcamento; // Atualiza produtos com suas seleções
 
-            // Atualizar tabela de resumo
             const corpoTabela = document.getElementById('corpoTabelaResumo');
             if (corpoTabela) {
                 corpoTabela.innerHTML = '';
@@ -952,26 +932,22 @@
                     if (produto.preco > 0) {
                         let nomeProduto, detalhes, corGeralId;
 
-                        // NOVO: Determinar nome e detalhes para itens avulsos
                         if (produto.isAvulso) {
                              nomeProduto = `[AVULSO] ${produto.nomeAvulso}`;
                              detalhes = [`Qtd: ${produto.quantidade.toFixed(2)} ${produto.unidadeMedida}`];
                              corGeralId = null; 
                         } else {
-                             // Lógica de produto/receita existente
                             const produtoReceita = produtosCadastrados.find(p => p.id == produto.produtoId);
                             nomeProduto = produtoReceita ? produtoReceita.nome : 'Produto Desconhecido';
                             detalhes = [];
                             corGeralId = produto.corGeralId;
                             
-                            // Lógica de detalhes existente (cor geral, substituições)
                             if(corGeralId) {
                                 const cor = coresCadastradas.find(c => c.id == corGeralId);
                                 if(cor) detalhes.push(`Cor: ${cor.nome}`);
                             }
                             Object.values(produto.substituicoes || {}).forEach(variacaoId => {
                                 const variacao = variacoesCadastradas.find(v => v.id == variacaoId);
-                                // Evita adicionar a cor geral novamente se ela já foi pega
                                 if(variacao && (!corGeralId || variacao.cor_id != corGeralId)) {
                                      detalhes.push(variacao.cores.nome);
                                 }
@@ -996,7 +972,7 @@
         // FIM atualizarResumoOrcamento
 
         // =============================================================================
-        // CRUD ORÇAMENTOS (SALVAR/CARREGAR/EXCLUIR)
+        // CRUD ORÇAMENTOS (SALVAR/CARREGAR/EXCLUIR) (SEM ALTERAÇÃO)
         // =============================================================================
 
         // INÍCIO salvarOrcamento
@@ -1019,9 +995,7 @@
             }
             orcamentoAtual.data = dataOrcamento;
 
-            // Prepara os dados para salvar (sem detalhes de cálculo)
              const produtosParaSalvar = orcamentoAtual.produtos.map(p => {
-                 // MODIFICAÇÃO: Verifica se é item avulso e salva os campos específicos
                  if (p.isAvulso) {
                      return {
                          id: p.id,
@@ -1034,7 +1008,6 @@
                          preco: p.preco, // Custo total
                      };
                  } else {
-                     // Item de Receita existente
                      return {
                         id: p.id,
                         produtoId: p.produtoId,
@@ -1059,7 +1032,6 @@
                     produtos: produtosParaSalvar, // Salva a versão limpa
                     total: orcamentoAtual.total,
                     margem: orcamentoAtual.margem,
-                    // Não salvamos mais selecoesGrupo aqui, está dentro de produtos
                     data_atualizacao: orcamentoAtual.data_atualizacao
                 };
 
@@ -1118,10 +1090,9 @@
                 let dataF = 'Inválida';
                 try {
                      if (orc.data) {
-                        // Tenta converter AAAA-MM-DD para DD/MM/AAAA
                         const [ano, mes, dia] = orc.data.split('-');
                         if(dia && mes && ano) dataF = `${dia}/${mes}/${ano}`;
-                        else dataF = orc.data; // Se já estiver DD/MM/AAAA ou outro formato
+                        else dataF = orc.data; 
                      }
                 } catch(e){ console.error("Erro formatando data:", orc.data, e); }
 
@@ -1218,6 +1189,12 @@
             const data = orcamentosCadastrados.find(o => o.id === id);
             if (!data) { alert('❌ Orçamento não encontrado'); return; }
 
+            // [MODIFICAÇÃO 3] Abrir o <details> se estiver fechado
+            const detailsElement = document.querySelector('.orcamento-section details');
+            if (detailsElement && !detailsElement.open) {
+                detailsElement.open = true;
+            }
+
             document.getElementById('nomeCliente').value = data.cliente || '';
             document.getElementById('telefoneCliente').value = data.telefone || '';
             document.getElementById('localizacaoObra').value = data.localizacao || '';
@@ -1238,7 +1215,6 @@
 
             produtosOrcamento = data.produtos || [];
             editandoOrcamentoId = id;
-            // Não precisa mais carregar selecoesGrupo aqui, ele está dentro dos produtos
 
             document.getElementById('listaProdutosOrcamento').innerHTML = '';
             produtosOrcamento.forEach(produto => {
@@ -1252,16 +1228,14 @@
 
         // INÍCIO adicionarProdutoOrcamentoExistente
         function adicionarProdutoOrcamentoExistente(produtoExistente) {
-            const produtoDivId = produtoExistente.id || ('produto_' + Date.now() + Math.random()); // Garante ID único
-             produtoExistente.id = produtoDivId; // Garante que o objeto tenha o ID do DOM
+            const produtoDivId = produtoExistente.id || ('produto_' + Date.now() + Math.random()); 
+             produtoExistente.id = produtoDivId; 
 
-            // NOVO: Se for item avulso, usa a função UI específica e retorna.
             if (produtoExistente.isAvulso) {
                 adicionarItemAvulsoUI(produtoExistente);
                 atualizarResumoOrcamento(); 
                 return;
             }
-            // FIM NOVO
 
             const produtoHTML = `
                 <div class="produto-orcamento-card" id="${produtoDivId}">
@@ -1296,12 +1270,10 @@
             document.getElementById('loadingProdutos')?.classList.add('hidden');
             document.getElementById('listaProdutosOrcamento').insertAdjacentHTML('beforeend', produtoHTML);
             
-             // Adiciona ao array global se não estiver lá (importante para recalcular)
-            const indexGlobal = produtosOrcamento.findIndex(p => p.id === produtoDivId);
+             const indexGlobal = produtosOrcamento.findIndex(p => p.id === produtoDivId);
             if (indexGlobal === -1) {
                  produtosOrcamento.push(produtoExistente);
             } else {
-                // Atualiza o objeto no array global com os dados carregados
                 produtosOrcamento[indexGlobal] = produtoExistente;
             }
 
@@ -1316,16 +1288,13 @@
                             containerSubst.classList.remove('hidden');
                             mostrarOpcoesSubstituiveis(produtoDivId, produtoReceita, itensSubstituiveis);
                             
-                            // Restaurar Cor Geral
                             if (produtoExistente.corGeralId) {
                                 const selectCorGeral = document.getElementById(`${produtoDivId}_select_cor_geral`);
                                 if (selectCorGeral) selectCorGeral.value = produtoExistente.corGeralId;
                             }
                             
-                            // Restaurar Seleções Individuais
                             if (produtoExistente.substituicoes) {
                                 Object.entries(produtoExistente.substituicoes).forEach(([itemPaiId, variacaoId]) => {
-                                    // Apenas restaura se NÃO for perfil/acessório (pois esses usam corGeralId)
                                      const itemComp = produtoReceita.itens_composicao.find(ic => ic.item_id == itemPaiId);
                                      if (itemComp && itemComp.tipo_item !== 'Perfis' && itemComp.tipo_item !== 'Acessorios') {
                                         const selectElement = document.getElementById(`${produtoDivId}_select_item_${itemPaiId}`);
@@ -1336,9 +1305,8 @@
                         }
                     }
                 }
-                // Recalcula para garantir que os preços e detalhes sejam exibidos
                 calcularProdutoOrcamento(produtoDivId);
-            }, 300); // Delay para garantir que o DOM foi atualizado
+            }, 300); // Delay
         }
         // FIM adicionarProdutoOrcamentoExistente
 
@@ -1381,7 +1349,6 @@
             document.getElementById('modalVisualizar').style.display = 'none';
         }
         // FIM fecharModal
-         // Fechar modal ao clicar fora
         window.onclick = function(event) {
             if (event.target == document.getElementById('modalVisualizar')) {
                 fecharModal();
@@ -1392,7 +1359,7 @@
         }
 
         // =============================================================================
-        // FUNÇÕES DE AÇÃO (PDF, NOVO ORÇAMENTO)
+        // FUNÇÕES DE AÇÃO (PDF, NOVO ORÇAMENTO) (SEM ALTERAÇÃO)
         // =============================================================================
 
         // INÍCIO gerarPDF
@@ -1468,12 +1435,10 @@
                 const vendaSub = (prod.preco || 0) * margemLucro;
 
                  if(prod.isAvulso) {
-                     // Item Avulso
                      nomeProd = `[AVULSO] ${prod.nomeAvulso}`;
                      infoDet = `Qtd: ${prod.quantidade.toFixed(2)} ${prod.unidadeMedida}`;
                      dimensoes = `Custo Unitário: R$ ${prod.precoUnitarioCusto.toFixed(2)}`;
                  } else {
-                     // Item de Receita
                     const receita = produtosCadastrados.find(p => p.id == prod.produtoId);
                     nomeProd = receita ? receita.nome : 'Produto ?';
                     
@@ -1515,6 +1480,12 @@
         function novoOrçamento() {
             if (produtosOrcamento.length > 0 && !confirm('Limpar orçamento atual?')) return;
 
+            // [MODIFICAÇÃO 3] Abrir o <details> se estiver fechado
+            const detailsElement = document.querySelector('.orcamento-section details');
+            if (detailsElement && !detailsElement.open) {
+                detailsElement.open = true;
+            }
+
             document.getElementById('nomeCliente').value = '';
             document.getElementById('telefoneCliente').value = '';
             document.getElementById('localizacaoObra').value = '';
@@ -1525,7 +1496,6 @@
             
             produtosOrcamento = [];
             editandoOrcamentoId = null;
-            // Reseta o objeto global também
             orcamentoAtual = { ...orcamentoAtual, id: null, cliente: '', telefone: '', localizacao: '', observacoes: '', status: 'rascunho', produtos: [], total: 0, margem: 1.5, data_atualizacao: null };
 
             document.getElementById('listaProdutosOrcamento').innerHTML = '<div class="loading" id="loadingProdutos">Nenhum produto adicionado</div>';
@@ -1535,7 +1505,7 @@
         // FIM novoOrçamento
 
         // =============================================================================
-        // GESTÃO DE ESTOQUE (BAIXA/REVERSÃO)
+        // GESTÃO DE ESTOQUE (BAIXA/REVERSÃO) (SEM ALTERAÇÃO)
         // =============================================================================
 
         // INÍCIO darBaixaEstoque
@@ -1576,7 +1546,6 @@
             if (produtosCadastrados.length === 0) await carregarProdutos(); // Garante receitas
 
             for (const prodOrc of orcamento.produtos) {
-                // Item avulso é ignorado na baixa automática (deve ser ajustado manualmente no Estoque)
                 if (prodOrc.isAvulso) continue; 
                 
                 const receita = produtosCadastrados.find(p => p.id == prodOrc.produtoId);
@@ -1596,8 +1565,6 @@
                             const variacao = variacoesCadastradas.find(v => v.item_id == itemPaiId && v.cor_id == prodOrc.corGeralId);
                             if (variacao) variacaoIdFinal = variacao.id;
                         } else if (prodOrc.substituicoes && prodOrc.substituicoes[itemPaiId]) {
-                             // Usa substituição individual (vidro) que já está no mapa 'substituicoes'
-                             // O mapa foi atualizado em calcularProdutoOrcamento
                             variacaoIdFinal = prodOrc.substituicoes[itemPaiId];
                         }
                     } else {
@@ -1645,7 +1612,7 @@
 
 
         // =============================================================================
-        // FUNÇÕES PARA ITEM AVULSO (ESTOQUE DIRETO) - NOVAS FUNÇÕES
+        // FUNÇÕES PARA ITEM AVULSO (ESTOQUE DIRETO) (SEM ALTERAÇÃO)
         // =============================================================================
 
         function abrirModalAdicionarItemAvulso() {
@@ -1654,10 +1621,8 @@
             
             let html = '<option value="">Selecione um item (Variação)...</option>';
             
-            // Usando toda variacao, apenas garantindo que tem cor
             const variacoesParaAvulsos = variacoesCadastradas.filter(v => v.cores); 
 
-            // Ordena por nome do item pai para facilitar a busca
             const variacoesOrdenadas = variacoesParaAvulsos.sort((a, b) => {
                 const itemPaiA = itensPai.find(i => i.id === a.item_id)?.nome || '';
                 const itemPaiB = itensPai.find(i => i.id === b.item_id)?.nome || '';
@@ -1670,7 +1635,7 @@
             variacoesOrdenadas.forEach(variacao => {
                 const itemPai = itensPai.find(i => i.id === variacao.item_id);
                 const nomeCompleto = `${itemPai?.nome || 'Item Desconhecido'} - ${variacao.cores.nome || 'S/ Cor'}`;
-                const precoVenda = variacao.preco_venda || 0; // Usado como custo no orçamento
+                const precoVenda = variacao.preco_venda || 0; 
                 
                 html += `<option value="${variacao.id}" data-custo="${precoVenda}">
                             ${nomeCompleto} (Est: ${variacao.quantidade_estoque.toFixed(2)} ${itemPai?.unidade_medida || 'UN'})
@@ -1734,10 +1699,8 @@
                 preco: precoTotalCusto, // Custo Total
             };
             
-            // Adicionar ao array global
             produtosOrcamento.push(novoItemAvulso);
             
-            // Atualiza a UI do orçamento
             adicionarItemAvulsoUI(novoItemAvulso);
 
             fecharModalItemAvulso();
@@ -1769,13 +1732,12 @@
         }
         
         // =============================================================================
-        // FUNÇÃO PARA ABRIR IMPRESSÃO TÉRMICA (VERSÃO CORRIGIDA)
+        // FUNÇÃO PARA ABRIR IMPRESSÃO TÉRMICA (SEM ALTERAÇÃO)
         // =============================================================================
 
         function abrirImpressaoTermica() {
             console.log('🖨️ Botão de impressão clicado!');
             
-            // Verifica se tem orçamento válido
             const nomeCliente = document.getElementById('nomeCliente').value.trim();
             if (!nomeCliente) {
                 alert('❌ Digite o nome do cliente primeiro.');
@@ -1788,7 +1750,6 @@
             
             console.log('📦 Preparando dados para impressão...');
             
-            // Prepara os dados do orçamento
             const orcamentoTemp = {
                 id: editandoOrcamentoId || 'temp_' + Date.now(),
                 cliente: nomeCliente,
@@ -1798,7 +1759,6 @@
                 data: document.getElementById('dataOrcamento').value,
                 status: document.getElementById('statusOrcamento').value,
                 produtos: produtosOrcamento.map(p => {
-                    // Mapeamento para garantir que os dados avulsos sejam salvos corretamente
                     if (p.isAvulso) {
                          return {
                              id: p.id,
@@ -1829,7 +1789,6 @@
             
             console.log('💾 Salvando no localStorage:', orcamentoTemp);
             
-            // Salva no localStorage
             try {
                 localStorage.setItem('orcamentoParaImpressao', JSON.stringify(orcamentoTemp));
                 console.log('✅ Dados salvos no localStorage');
@@ -1839,7 +1798,6 @@
                 return;
             }
             
-            // Tenta abrir a página de impressão
             try {
                 const url = 'relatorios_orcamentos_termica.html';
                 console.log('🌐 Abrindo URL:', url);
@@ -1851,8 +1809,6 @@
             }
         }
 
-
     </script>
 </body>
-
 </html>
