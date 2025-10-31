@@ -32,7 +32,7 @@
         /* ALTERAÇÃO: Novo grid para incluir mais colunas (SKU e Unidade de Medida) */
         .variacao-linha {
             display: grid;
-            grid-template-columns: 1fr 150px 100px 120px auto; /* 4 colunas de dados + Ações */
+            grid-template-columns: 1fr 150px 100px 120px auto; /* 5 colunas de dados + Ações */
             gap: 15px;
             align-items: center;
             padding: 10px 0;
@@ -85,6 +85,72 @@
             transform: scale(1.1);
         }
 
+        /* NOVO: Estilos responsivos para dispositivos móveis */
+        @media (max-width: 768px) {
+            /* Ajuste no layout das variações para mobile */
+            .variacao-linha {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+                padding: 15px;
+                border: 1px solid #e9ecef;
+                border-radius: 8px;
+                margin-bottom: 10px;
+                background: #f8f9fa;
+            }
+            
+            .variacao-linha > * {
+                width: 100%;
+                display: flex;
+                justify-content: space-between;
+                padding: 5px 0;
+                border-bottom: 1px solid rgba(0,0,0,0.05);
+            }
+            
+            .variacao-linha > *:last-child {
+                border-bottom: none;
+                justify-content: flex-end;
+                margin-top: 10px;
+            }
+            
+            /* Ajuste no cabeçalho das variações para mobile */
+            .variacao-linha:first-child {
+                display: none; /* Esconde o cabeçalho em mobile */
+            }
+            
+            /* Ajuste no header dos itens pai para mobile */
+            .item-pai-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .item-pai-header .acoes {
+                align-self: flex-end;
+            }
+            
+            /* Ajuste nos filtros para mobile */
+            .filtros-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .filtros-acoes {
+                flex-direction: column;
+            }
+            
+            /* Ajuste nos botões de ação para mobile */
+            .acoes {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+            
+            .btn-small {
+                padding: 6px 10px;
+                font-size: 0.85rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -436,10 +502,22 @@
             
             const variacoesHtml = variacoes.map(v => `
                 <div class="variacao-linha">
-                    <strong>${v.cores.nome}</strong> 
-                    <span>${v.sku || 'S/ SKU'}</span>
-                    <span>R$ ${v.preco_venda.toFixed(2)}</span>
-                    <span>${v.quantidade_estoque} ${unidade_medida}</span>
+                    <div>
+                        <span>Cor:</span>
+                        <span><strong>${v.cores.nome}</strong></span>
+                    </div>
+                    <div>
+                        <span>SKU/Código:</span>
+                        <span>${v.sku || 'S/ SKU'}</span>
+                    </div>
+                    <div>
+                        <span>Preço:</span>
+                        <span>R$ ${v.preco_venda.toFixed(2)}</span>
+                    </div>
+                    <div>
+                        <span>Qtd. Estoque:</span>
+                        <span>${v.quantidade_estoque} ${unidade_medida}</span>
+                    </div>
                     <div class="acoes">
                         <button class="btn btn-warning btn-small" onclick="editarVariacao(${v.id}, ${v.item_id})">✏️</button>
                         <button class="btn btn-danger btn-small" onclick="excluirVariacao(${v.id}, ${v.item_id})">🗑️</button>
