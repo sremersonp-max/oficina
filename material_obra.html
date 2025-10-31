@@ -603,14 +603,15 @@
                 const variacao = variacoesCadastradas.find(v => v.id == variacaoId);
                 if (!variacao) continue;
                 
-                // Calcular quantidade necessária
+                // Calcular quantidade necessária - CORREÇÃO APLICADA AQUI
                 const L = produto.largura || 0;
                 const A = produto.altura || 0;
                 const QtdProd = produto.quantidade || 1;
+                const QtdFormula = itemComposicao.quantidade_formula || 1;// Quantidade da fórmula
                 
                 try {
                     const qtdUnitaria = calcularQuantidadeFormula(itemComposicao.formula, L, A);
-                    const qtdTotal = qtdUnitaria * QtdProd;
+                    const qtdTotal = qtdUnitaria * QtdProd * QtdFormula; // MULTIPLICAR pela quantidade da fórmula
                     
                     if (qtdTotal > 0) {
                         materialObra.push({
@@ -622,6 +623,8 @@
                             precoUnitario: variacao.preco_venda || 0,
                             precoTotal: qtdTotal * (variacao.preco_venda || 0)
                         });
+                        
+                        console.log(`📦 Item: ${itemPai.nome}, Fórmula: ${itemComposicao.formula}, QtdFórmula: ${QtdFormula}, QtdUnit: ${qtdUnitaria}, QtdProd: ${QtdProd}, Total: ${qtdTotal}`);
                     }
                 } catch (e) {
                     console.error(`Erro fórmula '${itemComposicao.formula}' no item ${itemPai.nome}`, e);
@@ -647,12 +650,36 @@
             return false;
         }
 
+        // =============================================================================
+        // FUNÇÃO CORRIGIDA: CALCULAR QUANTIDADE FÓRMULA
+        // =============================================================================
         function calcularQuantidadeFormula(formula, L, A) {
             if (!formula || formula.trim() === '') return 1;
+            
             const formulaLower = formula.toLowerCase().trim();
-            let expressao = formulaLower.replace(/l/g, L.toString()).replace(/a/g, A.toString());
+            
+            // Se a fórmula for apenas um número (como "4"), retorna esse número
+            if (!isNaN(formulaLower)) {
+                return parseFloat(formulaLower);
+            }
+            
+            // Se a fórmula contém apenas números e operadores matemáticos
+            if (!formulaLower.includes('l') && !formulaLower.includes('a')) {
+                try {
+                    return parseFloat(eval(formulaLower)) || 0;
+                } catch (error) {
+                    console.error(`Erro ao avaliar fórmula numérica "${formula}"`, error);
+                    return 0;
+                }
+            }
+            
+            // Para fórmulas que usam L e A
+            let expressao = formulaLower
+                .replace(/l/g, L.toString())
+                .replace(/a/g, A.toString());
+            
             try {
-                const resultado = new Function(`return ${expressao}`)();
+                const resultado = eval(expressao);
                 return parseFloat(resultado) || 0;
             } catch (error) {
                 console.error(`Erro ao avaliar fórmula "${formula}" com L=${L}, A=${A} -> "${expressao}"`, error);
