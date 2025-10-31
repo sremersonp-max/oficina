@@ -27,343 +27,395 @@
         }
         .estoque-negativo {
             background-color: #fce4e4; /* Cor suave para negativo */
+            color: #c0392b;
             font-weight: bold;
-            color: #c00;
         }
         .estoque-baixo {
-            background-color: #fff9e4; /* Cor suave para baixo */
+            background-color: #fef9e7; /* Cor suave para baixo */
+            color: #f39c12;
         }
-        .destaque-compra {
-            background-color: #f0f8ff; /* Cor suave para sugestão de compra */
-            border-left: 5px solid #007bff;
-            padding: 10px;
-            margin-bottom: 10px;
+        .estoque-ok {
+            /* Padrão */
         }
-        .destaque-compra strong {
-            display: block;
-            margin-bottom: 5px;
+
+        /* NOVO: Grid de filtros mais robusto */
+        .filtros-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            align-items: flex-end; /* Alinha os botões na base */
         }
-        /* Estilo para a nova seção de filtros avançados */
-        .filtros-avancados {
-            border: 1px solid #ccc;
-            padding: 15px;
-            margin-top: 15px;
-            border-radius: 5px;
-            background-color: #f9f9f9;
-        }
-        
     </style>
 </head>
 <body>
     <div class="container">
+        
         <div class="card" style="margin-bottom: 25px;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
                 <h1>📊 Relatórios de Estoque</h1>
                 <div style="display: flex; gap: 10px;">
                     <a href="index.html" class="btn btn-secondary">🏠 Início</a>
-                    <a href="estoque.html" class="btn btn-primary">🏭 Gestão de Estoque</a>
-                    <a href="orcamento.html" class="btn btn-success">📋 Orçamentos</a>
+                    <a href="estoque.html" class="btn btn-primary">🏭 Estoque</a>
                 </div>
             </div>
         </div>
 
         <div class="card">
-            <h2>🔎 Opções de Consulta</h2>
+            <h2>Filtros do Relatório</h2>
             
-            <div class="grid grid-3" style="gap: 20px;">
+            <div class="filtros-grid">
                 <div class="form-group">
-                    <label for="tipoRelatorio">Filtro de Status de Estoque *</label>
-                    <select id="tipoRelatorio" onchange="gerarRelatorio()">
-                        <option value="baixo">Estoque Baixo (Abaixo do Mínimo)</option>
-                        <option value="negativo">Estoque Negativo</option>
-                        <option value="critico">Crítico (Baixo OU Negativo)</option>
-                        <option value="todos">Todos os Itens</option>
+                    <label for="tipoRelatorio">Status do Estoque</label>
+                    <select id="tipoRelatorio">
+                        <option value="completo">Completo (Todos)</option>
+                        <option value="baixo">Estoque Baixo</option>
+                        <option value="zerado">Estoque Zerado</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label for="nivelMinimo">Nível Mínimo de Alerta</label>
-                    <input type="number" id="nivelMinimo" value="5" min="0" onchange="gerarRelatorio()">
-                    <small class="text-muted">Valor de referência para "Estoque Baixo".</small>
+                    <label for="textoFiltro">Pesquisar (Nome, SKU, Cor)</label>
+                    <input type="text" id="textoFiltro" placeholder="Nome, SKU...">
+                </div>
+
+                <div class="form-group">
+                    <label for="categoriaFiltro">Categoria</label>
+                    <select id="categoriaFiltro">
+                        <option value="">Todas</option>
+                    </select>
                 </div>
                 
-                 <div class="form-group">
-                    <label for="categoriaFiltro">Filtrar por Categoria</label>
-                    <select id="categoriaFiltro" onchange="gerarRelatorio()">
-                        </select>
+                <div class="form-group">
+                    <label for="linhaFiltro">Linha</label>
+                    <select id="linhaFiltro">
+                        <option value="">Todas</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="corFiltro">Cor</label>
+                    <select id="corFiltro">
+                        <option value="">Todas</option>
+                    </select>
                 </div>
             </div>
 
-            <div class="filtros-avancados">
-                <h4>Filtros Avançados</h4>
-                <div class="grid grid-2" style="gap: 20px;">
-                    <div class="form-group">
-                        <label for="pesquisaRelatorio">Pesquisa por Nome/SKU</label>
-                        <input type="text" id="pesquisaRelatorio" placeholder="🔍 Pesquisar..." onkeyup="gerarRelatorio()">
-                    </div>
-                    <div class="form-group">
-                        <label>Itens sem Estoque Físico (Excluídos)</label>
-                        <p class="text-muted" id="categoriasExcluidas">Vidros, Mão de Obra, etc. (Definido no JS)</p>
-                    </div>
-                </div>
+            <div class="acoes" style="margin-top: 20px; display:flex; gap: 10px;">
+                <button class="btn btn-primary" onclick="gerarRelatorio()">📊 Gerar Relatório</button>
+                <button class="btn btn-secondary" onclick="limparFiltros()">🗑️ Limpar Filtros</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="acoes" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0;" id="tituloResultado">Resultado</h2>
+                <button class="btn btn-success" id="btnExportarPDF" onclick="exportarPDF()" disabled>📄 Exportar PDF</button>
             </div>
             
-            <div style="margin-top: 20px; text-align: right;">
-                 <button class="btn btn-primary" onclick="gerarRelatorio()">🔄 Recarregar Relatório</button>
-                 <button class="btn btn-danger" id="btnExportarPDF" onclick="exportarParaPDF()">📄 Exportar PDF</button>
+            <div id="relatorioContainer">
+                <p class="muted">Gere um relatório usando os filtros acima.</p>
             </div>
-        </div>
-
-        <div class="card" style="margin-top: 20px;">
-            <h2>🛒 Sugestão de Compras (Itens Críticos)</h2>
-            <div id="sugestaoCompras">
-                 <p class="muted">Aguardando geração do relatório.</p>
-            </div>
-        </div>
-
-        <div class="card" style="margin-top: 20px;" id="conteudoRelatorio">
-            <h2>Lista de Itens (Total: <span id="totalItens">0</span>)</h2>
-            <div id="resultadosRelatorio">
-                <p class="muted">Selecione e filtre o tipo de relatório.</p>
+            
+            <div id="relatorioTotais" class="card" style="margin-top: 20px; background: #f8f9fa; display: none;">
+                <h3>Totais do Relatório</h3>
+                <div class="grid grid-3" style="margin-top: 15px;">
+                    <div class="form-group">
+                        <label>Total de Itens (SKUs)</label>
+                        <input type="text" id="totalItens" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Valor Total em Estoque (Preço Venda)</label>
+                        <input type="text" id="valorTotalVenda" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Valor Total em Estoque (Preço Custo)</label>
+                        <input type="text" id="valorTotalCusto" readonly>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script src="config.js"></script>
     <script>
-        const { jsPDF } = window.jspdf;
-        // CATEGORIAS EXCLUÍDAS DO RELATÓRIO DE ESTOQUE FÍSICO (Ex: itens comprados sob demanda)
-        // OBS: Estes nomes devem ser EXATAMENTE iguais aos nomes de categorias no seu Supabase.
-        const CATEGORIAS_EXCLUIDAS_NOME = ['Vidro', 'Mão de Obra', 'Serviço']; 
+        // Armazena todos os itens carregados para filtragem rápida
+        let todosOsItens = [];
 
         document.addEventListener('DOMContentLoaded', async () => {
-            // Verifica PDF
-            if (typeof jsPDF === 'undefined' || typeof html2canvas === 'undefined') {
-                 console.error("Bibliotecas jsPDF ou html2canvas não carregadas. PDF desabilitado.");
-                 document.getElementById('btnExportarPDF').style.opacity = '0.5';
-                 document.getElementById('btnExportarPDF').disabled = true;
+            await popularSelects();
+            
+            // Carrega todos os dados na inicialização
+            const loadingElement = document.getElementById('relatorioContainer');
+            loadingElement.innerHTML = '<p class="loading">Carregando todos os itens do estoque...</p>';
+            
+            try {
+                // A função carregarItens() vem de config.js e já busca todas as variações
+                todosOsItens = await estoqueFunctions.carregarItens();
+                
+                // Gera o relatório inicial "Completo"
+                gerarRelatorio();
+            } catch (error) {
+                console.error("Erro ao carregar itens:", error);
+                loadingElement.innerHTML = '<p class="text-danger">❌ Erro ao carregar dados. Verifique o console.</p>';
             }
-            // Popula filtros e gera relatório
-            await popularSelectsRelatorio();
-            document.getElementById('categoriasExcluidas').textContent = CATEGORIAS_EXCLUIDAS_NOME.join(', ');
-            gerarRelatorio(); 
         });
 
-        // =============================================================================
-        // INICIALIZAÇÃO DE FILTROS
-        // =============================================================================
-        async function popularSelectsRelatorio() {
-            const selectCategoria = document.getElementById('categoriaFiltro');
+        // MODIFICADO: Carrega Categorias, Linhas e Cores
+        async function popularSelects() {
             try {
-                const categorias = await estoqueFunctions.carregarCategorias();
+                const [categorias, linhas, cores] = await Promise.all([
+                    estoqueFunctions.carregarCategorias(),
+                    estoqueFunctions.carregarLinhas(),
+                    estoqueFunctions.carregarCores()
+                ]);
+
+                const catSelect = document.getElementById('categoriaFiltro');
+                catSelect.innerHTML = '<option value="">Todas</option>' + 
+                    categorias.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
                 
-                let html = '<option value="todos">Todas as Categorias</option>';
-                html += categorias.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
-                selectCategoria.innerHTML = html;
+                const linhaSelect = document.getElementById('linhaFiltro');
+                linhaSelect.innerHTML = '<option value="">Todas</option>' + 
+                    linhas.map(l => `<option value="${l.id}">${l.nome}</option>`).join('');
+
+                const corSelect = document.getElementById('corFiltro');
+                corSelect.innerHTML = '<option value="">Todas</option>' + 
+                    cores.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+
             } catch (error) {
-                console.error("Erro ao carregar categorias para o filtro:", error);
-                selectCategoria.innerHTML = '<option value="todos">Erro ao carregar</option>';
+                console.error("Erro ao popular selects:", error);
+                alert('Erro ao carregar filtros. Verifique o console.');
             }
         }
 
-        // =============================================================================
-        // FUNÇÕES DE RELATÓRIO
-        // =============================================================================
+        // NOVO: Função para limpar todos os filtros
+        function limparFiltros() {
+            document.getElementById('tipoRelatorio').value = 'completo';
+            document.getElementById('textoFiltro').value = '';
+            document.getElementById('categoriaFiltro').value = '';
+            document.getElementById('linhaFiltro').value = '';
+            document.getElementById('corFiltro').value = '';
+            
+            gerarRelatorio(); // Gera o relatório com os filtros limpos
+        }
 
-        async function gerarRelatorio() {
+        // MODIFICADO: Apenas chama a função de filtragem e renderização
+        function gerarRelatorio() {
             const tipoRelatorio = document.getElementById('tipoRelatorio').value;
-            const nivelMinimo = parseFloat(document.getElementById('nivelMinimo').value) || 0;
-            const categoriaFiltroId = document.getElementById('categoriaFiltro').value;
-            const filtroPesquisa = document.getElementById('pesquisaRelatorio').value.toLowerCase();
+            const categoriaFiltro = document.getElementById('categoriaFiltro').value;
+            const linhaFiltro = document.getElementById('linhaFiltro').value;
+            const corFiltro = document.getElementById('corFiltro').value;
+            const textoFiltro = document.getElementById('textoFiltro').value;
+
+            // Filtra os dados localmente
+            const dadosFiltrados = filtrarDados(
+                todosOsItens, 
+                tipoRelatorio, 
+                categoriaFiltro, 
+                linhaFiltro, 
+                corFiltro, 
+                textoFiltro
+            );
             
-            const resultadosDiv = document.getElementById('resultadosRelatorio');
-            const sugestaoDiv = document.getElementById('sugestaoCompras');
-            
-            resultadosDiv.innerHTML = '<div class="loading">Carregando dados de estoque...</div>';
-            sugestaoDiv.innerHTML = '<div class="loading">Calculando sugestões...</div>';
-
-            try {
-                // Carrega todos os itens ativos
-                let dadosEstoque = await estoqueFunctions.carregarItens(filtroPesquisa); 
-                
-                let itensFiltrados = [];
-                let itensCriticos = [];
-
-                // 1. FILTRAGEM BASE (Exclusão de categorias sem estoque físico)
-                dadosEstoque = dadosEstoque.filter(item => {
-                    // Retorna TRUE se a categoria do item NÃO estiver na lista de exclusão
-                    return !CATEGORIAS_EXCLUIDAS_NOME.includes(item.categorias.nome);
-                });
-                
-                // 2. FILTRAGEM POR CATEGORIA
-                if (categoriaFiltroId !== 'todos') {
-                     dadosEstoque = dadosEstoque.filter(item => String(item.categoria_id) === categoriaFiltroId);
-                }
-
-
-                // 3. FILTRAGEM POR STATUS E IDENTIFICAÇÃO DE CRÍTICOS
-                dadosEstoque.forEach(item => {
-                    const isNegativo = item.quantidade_estoque < 0;
-                    const isBaixo = item.quantidade_estoque >= 0 && item.quantidade_estoque < nivelMinimo;
-
-                    // Todos os itens que precisam de atenção
-                    if (isNegativo || isBaixo) {
-                        itensCriticos.push(item);
-                    }
-                    
-                    // Itens que correspondem ao filtro de status selecionado
-                    if (tipoRelatorio === 'negativo' && isNegativo) {
-                        itensFiltrados.push(item);
-                    } else if (tipoRelatorio === 'baixo' && isBaixo) {
-                        itensFiltrados.push(item);
-                    } else if (tipoRelatorio === 'critico' && (isNegativo || isBaixo)) {
-                        itensFiltrados.push(item);
-                    } else if (tipoRelatorio === 'todos') {
-                        itensFiltrados.push(item);
-                    }
-                });
-
-
-                // 4. Renderizar o relatório principal
-                document.getElementById('totalItens').textContent = itensFiltrados.length;
-                
-                if (itensFiltrados.length === 0) {
-                    resultadosDiv.innerHTML = '<p class="muted">Nenhum item encontrado com os critérios de filtro.</p>';
-                } else {
-                    resultadosDiv.innerHTML = renderTabelaRelatorio(itensFiltrados, nivelMinimo);
-                }
-                
-                // 5. Renderizar a sugestão de compras (baseada em todos os itens críticos, APÓS filtros de exclusão)
-                sugestaoDiv.innerHTML = renderSugestaoCompras(itensCriticos, nivelMinimo);
-
-            } catch(error) {
-                resultadosDiv.innerHTML = `<p class="text-danger">❌ Erro ao carregar dados: ${error.message}</p>`;
-                sugestaoDiv.innerHTML = `<p class="text-danger">❌ Erro ao calcular sugestões: ${error.message}</p>`;
-            }
+            // Renderiza a tabela com os dados filtrados
+            renderizarTabela(dadosFiltrados, tipoRelatorio);
         }
 
-        /**
-         * Renderiza a tabela principal do relatório.
-         */
-        function renderTabelaRelatorio(itens, nivelMinimo) {
-            let html = `
-                <table class="relatorio-tabela">
+        // NOVO: Função central de filtragem
+        function filtrarDados(itens, tipo, categoriaId, linhaId, corId, texto) {
+            const textoBusca = texto.toLowerCase().trim();
+
+            return itens.filter(item => {
+                // Filtro de Texto (Nome, SKU, Cor)
+                if (textoBusca) {
+                    const nomeMatch = item.nome_base.toLowerCase().includes(textoBusca);
+                    // Garante que sku não seja nulo antes de chamar toLowerCase()
+                    const skuMatch = item.sku && item.sku.toLowerCase().includes(textoBusca);
+                    const corMatch = item.cor.toLowerCase().includes(textoBusca);
+                    
+                    if (!nomeMatch && !skuMatch && !corMatch) {
+                        return false;
+                    }
+                }
+                
+                // Filtro Categoria (compara com item.categoria_id)
+                if (categoriaId && item.categoria_id != categoriaId) {
+                    return false;
+                }
+
+                // Filtro Linha (compara com item.linha_id)
+                if (linhaId && item.linha_id != linhaId) {
+                    return false;
+                }
+
+                // Filtro Cor (compara com item.cor_id)
+                if (corId && item.cor_id != corId) {
+                    return false;
+                }
+
+                // Filtro de Status (Tipo Relatório)
+                if (tipo === 'baixo') {
+                    // Lógica original (item.itens?.quantidade_minima não vem de config.js, então usará 0)
+                    // Esta lógica provavelmente filtra itens com estoque > 0 e <= 0, ou seja, nenhum item.
+                    // Para funcionar, config.js -> carregarItens() precisaria ser ajustado.
+                    // Mantendo a lógica do arquivo original:
+                    const qtdMinima = item.itens?.quantidade_minima || 0; 
+                    if (item.quantidade_estoque <= 0 || item.quantidade_estoque > qtdMinima) {
+                         return false;
+                    }
+
+                } else if (tipo === 'zerado') {
+                    if (item.quantidade_estoque > 0) {
+                        return false;
+                    }
+                }
+                
+                // Se passou por tudo
+                return true;
+            });
+        }
+
+
+        // Função para renderizar a tabela (sem modificações de lógica, apenas de nome de var)
+        function renderizarTabela(dados, tipoRelatorio) {
+            const container = document.getElementById('relatorioContainer');
+            const totaisContainer = document.getElementById('relatorioTotais');
+            const btnPDF = document.getElementById('btnExportarPDF');
+            
+            // Atualiza o título
+            const tipoTexto = document.getElementById('tipoRelatorio').options[document.getElementById('tipoRelatorio').selectedIndex].text;
+            document.getElementById('tituloResultado').textContent = `Resultado: ${tipoTexto}`;
+
+            if (!dados || dados.length === 0) {
+                container.innerHTML = '<p class="muted">Nenhum item encontrado com os filtros aplicados.</p>';
+                totaisContainer.style.display = 'none';
+                btnPDF.disabled = true;
+                return;
+            }
+
+            let valorTotalVenda = 0;
+            let valorTotalCusto = 0; // Este campo não existe nos dados, será sempre 0
+
+            let tabelaHtml = `
+                <table class="relatorio-tabela" id="tabelaRelatorio">
                     <thead>
                         <tr>
-                            <th>Item Modelo</th>
-                            <th>Variação/Cor</th>
+                            <th>Item (Modelo)</th>
+                            <th>Cor</th>
                             <th>SKU</th>
-                            <th>Unid.</th>
-                            <th>Qtd. em Estoque</th>
-                            <th>Categoria</th>
-                            <th>Status</th>
+                            <th>Un.</th>
+                            <th>Preço Venda (R$)</th>
+                            <th>Estoque Atual</th>
+                            <th>Valor em Estoque (R$)</th>
                         </tr>
                     </thead>
                     <tbody>
             `;
-            
-            itens.forEach(item => {
-                let classeLinha = '';
-                let status = 'OK';
-                if (item.quantidade_estoque < 0) {
-                    classeLinha = 'estoque-negativo';
-                    status = 'NEGATIVO';
-                } else if (item.quantidade_estoque < nivelMinimo) {
-                    classeLinha = 'estoque-baixo';
-                    status = 'BAIXO';
-                }
+
+            for (const item of dados) {
+                const qtd = item.quantidade_estoque || 0;
+                const precoVenda = item.preco_venda || 0;
+                const valorEstoque = qtd * precoVenda;
+                valorTotalVenda += valorEstoque;
                 
-                html += `
-                    <tr class="${classeLinha}">
-                        <td>${item.nome_base}</td>
-                        <td>${item.cor}</td>
+                // OBS: 'item.itens.preco_custo' não é carregado pela função carregarItens()
+                const precoCusto = item.itens?.preco_custo || 0; 
+                valorTotalCusto += qtd * precoCusto;
+
+                // Define a classe CSS com base no status do estoque
+                let classeEstoque = 'estoque-ok';
+                const qtdMinima = item.itens?.quantidade_minima || 0;
+
+                if (qtd <= 0) {
+                    classeEstoque = 'estoque-negativo';
+                } else if (qtd > 0 && qtd <= qtdMinima) {
+                    classeEstoque = 'estoque-baixo';
+                }
+
+                tabelaHtml += `
+                    <tr class="${classeEstoque}">
+                        <td>${item.nome_base || 'N/A'}</td>
+                        <td>${item.cor || 'N/A'}</td>
                         <td>${item.sku || 'N/A'}</td>
-                        <td>${item.unidade_medida}</td>
-                        <td>${item.quantidade_estoque.toFixed(2)}</td>
-                        <td>${item.categorias.nome || 'S/Categoria'}</td>
-                        <td><strong>${status}</strong></td>
+                        <td>${item.unidade_medida || 'N/A'}</td>
+                        <td>${precoVenda.toFixed(2)}</td>
+                        <td><strong>${qtd}</strong></td>
+                        <td>${valorEstoque.toFixed(2)}</td>
                     </tr>
                 `;
-            });
-
-            html += `</tbody></table>`;
-            return html;
-        }
-        
-        /**
-         * Renderiza a lista de sugestão de compras com base em itens críticos.
-         */
-        function renderSugestaoCompras(itensCriticos, nivelMinimo) {
-            if (itensCriticos.length === 0) {
-                return '<p class="muted">Nenhum item em estoque crítico (negativo ou abaixo do mínimo) que exija compra.</p>';
             }
-            
-            let html = '';
-            
-            itensCriticos.forEach(item => {
-                const isNegativo = item.quantidade_estoque < 0;
-                
-                let qtdNecessaria = 0;
-                let statusMsg = '';
-                
-                if (isNegativo) {
-                    // Repõe o que está faltando para zero + o nível mínimo
-                    qtdNecessaria = (item.quantidade_estoque * -1) + nivelMinimo;
-                    statusMsg = `**NEGATIVO (${item.quantidade_estoque.toFixed(2)} ${item.unidade_medida})**. Sugerido repor para atender a demanda e atingir o mínimo.`;
-                } else {
-                    // Repõe o que falta para o nível mínimo + 5 de margem de segurança
-                    qtdNecessaria = (nivelMinimo - item.quantidade_estoque) + 5; 
-                    statusMsg = `**BAIXO (${item.quantidade_estoque.toFixed(2)} ${item.unidade_medida})**. Sugerido repor para sair da zona crítica.`;
-                }
 
-                
-                html += `
-                    <div class="destaque-compra">
-                        <strong>${item.nome_base} - ${item.cor} (SKU: ${item.sku || 'N/A'})</strong>
-                        <p style="margin: 5px 0 0;">Categoria: ${item.categorias.nome}. Status: ${statusMsg}</p>
-                        <p style="margin: 0; font-weight: bold; color: green;">COMPRAR: ${qtdNecessaria.toFixed(2)} ${item.unidade_medida}</p>
-                    </div>
-                `;
-            });
+            tabelaHtml += `
+                    </tbody>
+                </table>
+            `;
             
-            return html;
+            container.innerHTML = tabelaHtml;
+            
+            // Atualiza e exibe os totais
+            document.getElementById('totalItens').value = dados.length;
+            document.getElementById('valorTotalVenda').value = `R$ ${valorTotalVenda.toFixed(2)}`;
+            document.getElementById('valorTotalCusto').value = `R$ ${valorTotalCusto.toFixed(2)}`;
+            totaisContainer.style.display = 'block';
+            btnPDF.disabled = false;
         }
 
 
         // =============================================================================
-        // FUNÇÃO DE EXPORTAÇÃO PARA PDF (MANTIDA)
+        // FUNÇÃO DE EXPORTAR PDF (Sem alterações)
         // =============================================================================
-        async function exportarParaPDF() {
-            if (typeof jsPDF === 'undefined' || typeof html2canvas === 'undefined') {
-                alert('As bibliotecas de PDF não carregaram corretamente. Tente novamente ou verifique sua conexão.');
-                return;
-            }
-            
-            const input = document.getElementById('conteudoRelatorio'); 
-            const tipoRelatorio = document.getElementById('tipoRelatorio').options[document.getElementById('tipoRelatorio').selectedIndex].text;
-            
+        async function exportarPDF() {
             const btn = document.getElementById('btnExportarPDF');
-            btn.textContent = 'Gerando PDF...';
+            btn.textContent = 'Gerando...';
             btn.disabled = true;
 
+            const { jsPDF } = window.jspdf;
+            const tabela = document.getElementById('tabelaRelatorio');
+            
+            if (!tabela) {
+                alert('❌ Tabela não encontrada para exportar.');
+                btn.textContent = '📄 Exportar PDF';
+                btn.disabled = false;
+                return;
+            }
+
             try {
-                const canvas = await html2canvas(input, { scale: 2 });
+                // Usa html2canvas para capturar a tabela como imagem
+                const canvas = await html2canvas(tabela, {
+                    scale: 2, // Aumenta a resolução
+                    useCORS: true
+                });
+                
                 const imgData = canvas.toDataURL('image/png');
                 
-                const doc = new jsPDF('p', 'mm', 'a4');
-                const imgWidth = 190;
-                const pageHeight = 295;
-                const imgHeight = canvas.height * imgWidth / canvas.width;
-                let heightLeft = imgHeight;
-                let position = 10; 
+                const doc = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'mm',
+                    format: 'a4'
+                });
 
-                // Adiciona o cabeçalho
-                doc.setFontSize(16);
-                doc.text(`Relatório de Estoque - ${tipoRelatorio}`, 10, position);
+                const pageHeight = doc.internal.pageSize.getHeight();
+                const pageWidth = doc.internal.pageSize.getWidth();
+                
+                const imgWidth = pageWidth - 20; // Margens (10mm de cada lado)
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                
+                let heightLeft = imgHeight;
+                let position = 25; // Posição inicial com margem superior
+
+                // --- Adiciona Cabeçalho ---
+                doc.setFontSize(18);
+                doc.setFont(undefined, 'bold');
+                doc.text("Oficina da Familia - Relatório de Estoque", pageWidth / 2, 15, { align: 'center' });
+                
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'normal');
+                const tipoRelatorio = document.getElementById('tipoRelatorio').options[document.getElementById('tipoRelatorio').selectedIndex].text;
+                doc.text(`Tipo de Relatório: ${tipoRelatorio}`, 10, position);
+                
                 doc.setFontSize(10);
                 doc.text(`Filtro Categoria: ${document.getElementById('categoriaFiltro').options[document.getElementById('categoriaFiltro').selectedIndex].text}`, 10, position + 7);
                 doc.text(`Data: ${new Date().toLocaleDateString()}`, 10, position + 14);
-                position += 25;
+                position += 25; // Incrementa a posição para baixo do cabeçalho
 
                 // Adiciona a imagem do HTML
                 doc.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);

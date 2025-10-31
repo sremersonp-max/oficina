@@ -344,6 +344,9 @@
         let orcamentoData = null;
         let orcamentosSalvos = [];
         let produtosCadastrados = [];
+        // NOVAS VARIÁVEIS GLOBAIS (COPIADAS DO pedido_tempera.html)
+        let variacoesCompletas = [];
+        let coresCompletas = [];
 
         // =============================================================================
         // INICIALIZAÇÃO
@@ -351,6 +354,7 @@
         document.addEventListener('DOMContentLoaded', async function() {
             console.log('🖨️ Iniciando sistema de impressão térmica...');
             await carregarProdutosCadastrados();
+            await carregarDadosAdicionaisParaVidros(); // <-- CHAMADA DA NOVA FUNÇÃO
             await carregarOrcamentosSalvos();
             await carregarDadosOrcamento();
         });
@@ -376,6 +380,33 @@
         }
 
         // =============================================================================
+        // (NOVA FUNÇÃO) CARREGAR DADOS ADICIONAIS PARA VIDROS (CORES)
+        // =============================================================================
+        async function carregarDadosAdicionaisParaVidros() {
+            try {
+                // Carregar variações e cores para identificar os vidros selecionados
+                console.log('🎨 Carregando dados de variações e cores para vidros...');
+                const [variacoesRes, coresRes] = await Promise.all([
+                    supabase.from('item_variacoes').select('*, cores(nome), itens(nome, categorias(nome))'),
+                    supabase.from('cores').select('*')
+                ]);
+
+                if (variacoesRes.error) throw variacoesRes.error;
+                if (coresRes.error) throw coresRes.error;
+
+                variacoesCompletas = variacoesRes.data || [];
+                coresCompletas = coresRes.data || [];
+                
+                console.log(`✅ ${variacoesCompletas.length} variações e ${coresCompletas.length} cores carregadas.`);
+                
+            } catch (error) {
+                console.error('❌ Erro ao carregar dados adicionais:', error);
+                variacoesCompletas = [];
+                coresCompletas = [];
+            }
+        }
+
+        // =============================================================================
         // FUNÇÃO PARA OBTER NOME DO PRODUTO
         // =============================================================================
         function obterNomeProduto(produto) {
@@ -389,6 +420,34 @@
                 return `Produto ${produto.produtoId}`;
             }
         }
+
+        // =============================================================================
+        // (NOVA FUNÇÃO) FUNÇÃO PARA OBTER COR DO VIDRO
+        // =============================================================================
+        function obterInfoVidro(produto) {
+            let corVidro = null;
+            let tipoVidroInfo = null;
+            
+            if (produto.substituicoes && variacoesCompletas.length > 0) {
+                // Procurar qual item de vidro foi substituído neste produto
+                Object.entries(produto.substituicoes).forEach(([itemPaiId, variacaoId]) => {
+                    const variacao = variacoesCompletas.find(v => v.id == variacaoId);
+                    if (variacao) {
+                        // Verificar se esta variação é um vidro
+                        const isVidro = variacao.itens?.nome?.toLowerCase().includes('vidro') || 
+                                       (variacao.itens?.categorias?.nome && variacao.itens.categorias.nome.toLowerCase().includes('vidro'));
+                        
+                        if (isVidro) {
+                            corVidro = variacao.cores?.nome || 'Cor não identificada';
+                            tipoVidroInfo = variacao.itens?.nome || 'Vidro';
+                        }
+                    }
+                });
+            }
+            
+            return { corVidro, tipoVidroInfo };
+        }
+
 
         // =============================================================================
         // CARREGAMENTO DE ORÇAMENTOS SALVOS
@@ -481,6 +540,7 @@
             try {
                 console.log('🗃️ Carregando orçamento do banco:', orcamentoId);
                 
+                // Garantir que a coluna 'substituicoes' dentro de 'produtos' seja carregada
                 const { data, error } = await supabase
                     .from('orcamentos')
                     .select('id, cliente, telefone, localizacao, observacoes, data, status, produtos, total, margem')
@@ -498,12 +558,12 @@
                     observacoes: data.observacoes,
                     data: data.data,
                     status: data.status,
-                    produtos: data.produtos || [],
+                    produtos: data.produtos || [], // A coluna 'produtos' já deve conter 'substituicoes'
                     total: data.total || 0,
                     margem: data.margem || 1
                 };
 
-                console.log('✅ Orçamento carregado do banco:', orcamentoData);
+                console.log('✅ Orçamento carregado do banco (com produtos/substituicoes):', orcamentoData);
                 preencherDadosOrcamento();
                 mostrarAlerta(`✅ Orçamento de ${orcamentoData.cliente} carregado!`, 'success');
                 
@@ -519,7 +579,7 @@
             document.getElementById('cliente').value = orcamentoData.cliente || 'Não informado';
             document.getElementById('telefone').value = orcamentoData.telefone || 'Não informado';
             document.getElementById('localizacao').value = orcamentoData.localizacao || 'Não informado';
-            document.getElementById('dataOrcamento').value = orcamentoData.data || new Date().toLocaleDateString('pt-BR');
+            document.getElementById('dataOrcamento').value = orcamentoData.data ? formatarData(orcamentoData.data) : new Date().toLocaleDateString('pt-BR');
             document.getElementById('statusOrcamento').value = orcamentoData.status || 'rascunho';
             
             // MANTENDO O CÁLCULO DA MARGEM NO TOTAL
@@ -556,20 +616,22 @@
             const totalVenda = (orcamentoData.total || 0) * margem;
             const observacoes = document.getElementById('observacoesImpressao').value;
             const copias = parseInt(document.getElementById('copias').value) || 1;
+            const dataFormatada = orcamentoData.data ? formatarData(orcamentoData.data) : new Date().toLocaleDateString('pt-BR');
 
             let conteudo = '';
             
-            // Cabeçalho
+            // Cabeçalho (Mantido)
             conteudo += '═'.repeat(42) + '\n';
             conteudo += ' '.repeat(10) + '** OFICINA DA FAMÍLIA **' + '\n';
             conteudo += ' '.repeat(8) + 'Tel: (42) 99960-8330' + '\n';
+            conteudo += ' '.repeat(6) + 'R Elias Calisto, 669 - Ipiranga-PR' + '\n'; // Adicionado endereço
             conteudo += '═'.repeat(42) + '\n\n';
             
             // Dados do Cliente
             conteudo += 'CLIENTE: ' + (orcamentoData.cliente || 'Não informado') + '\n';
             conteudo += 'TEL: ' + (orcamentoData.telefone || 'Não informado') + '\n';
             conteudo += 'LOCAL: ' + (orcamentoData.localizacao || 'Não informado') + '\n';
-            conteudo += 'DATA: ' + (orcamentoData.data || new Date().toLocaleDateString('pt-BR')) + '\n';
+            conteudo += 'DATA: ' + dataFormatada + '\n';
             conteudo += 'STATUS: ' + (orcamentoData.status || 'rascunho') + '\n';
             conteudo += '─'.repeat(42) + '\n\n';
             
@@ -598,9 +660,20 @@
                     if (nomeExibicao.length > 30) {
                         nomeExibicao = nomeExibicao.substring(0, 30) + '...';
                     }
+
+                    // ***** INÍCIO DA ALTERAÇÃO *****
+                    const infoVidro = obterInfoVidro(produto);
+                    let infoCor = '';
+                    if (infoVidro.corVidro) {
+                        // Formata para caber na linha da impressora térmica (42 col)
+                        const textoCor = `(${infoVidro.tipoVidro || 'Vidro'} ${infoVidro.corVidro})`;
+                        infoCor = `   ${textoCor.substring(0, 39)}\n`;
+                    }
+                    // ***** FIM DA ALTERAÇÃO *****
                     
                     conteudo += `${index + 1}. ${nomeExibicao}\n`;
                     conteudo += `   ${descricao}\n`;
+                    conteudo += infoCor; // <-- ADICIONADO AQUI
                     conteudo += `   R$ ${precoVenda.toLocaleString('pt-BR', {minimumFractionDigits: 2})}\n`;
                     
                     if (index < orcamentoData.produtos.length - 1) {
@@ -691,6 +764,7 @@
             const totalVenda = (orcamentoData.total || 0) * margem;
             const observacoes = document.getElementById('observacoesImpressao').value;
             const copias = parseInt(document.getElementById('copias').value) || 1;
+            const dataFormatada = orcamentoData.data ? formatarData(orcamentoData.data) : new Date().toLocaleDateString('pt-BR');
 
             let conteudo = '';
             
@@ -703,17 +777,18 @@
             
             const linhaDivisoria = (caractere = '=') => caractere.repeat(larguraLinha);
             
-            // Cabeçalho
+            // Cabeçalho (Mantido)
             conteudo += linhaDivisoria() + '\n';
             conteudo += centralizar('OFICINA DA FAMÍLIA') + '\n';
             conteudo += centralizar('(42) 99960-8330') + '\n';
+            conteudo += centralizar('R Elias Calisto, 669') + '\n'; // Endereço
             conteudo += linhaDivisoria() + '\n\n';
             
             // Dados do Cliente
             conteudo += 'CLIENTE: ' + (orcamentoData.cliente || 'N/I') + '\n';
             conteudo += 'TEL: ' + (orcamentoData.telefone || 'N/I') + '\n';
             conteudo += 'LOCAL: ' + (orcamentoData.localizacao || 'N/I') + '\n';
-            conteudo += 'DATA: ' + (orcamentoData.data || new Date().toLocaleDateString('pt-BR')) + '\n';
+            conteudo += 'DATA: ' + dataFormatada + '\n';
             conteudo += 'STATUS: ' + (orcamentoData.status || 'rascunho') + '\n';
             conteudo += linhaDivisoria('-') + '\n\n';
             
@@ -744,6 +819,15 @@
                     const linhaPreco = `R$ ${precoVenda.toFixed(2)}`;
                     
                     conteudo += linhaProduto + linhaDescricao + linhaPreco + '\n';
+
+                    // ***** INÍCIO DA ALTERAÇÃO *****
+                    const infoVidro = obterInfoVidro(produto);
+                    if (infoVidro.corVidro) {
+                        const textoCor = `   (${infoVidro.tipoVidro || 'V'} ${infoVidro.corVidro})`;
+                        conteudo += textoCor.substring(0, larguraLinha) + '\n';
+                    }
+                    // ***** FIM DA ALTERAÇÃO *****
+
                 });
             } else {
                 conteudo += 'Nenhum produto\n';
@@ -798,7 +882,7 @@
             const copias = parseInt(document.getElementById('copias').value) || 1;
             
             if (tipoImpressora === 'pdf') {
-                imprimirPDF();
+                imprimirPDF(); // Simula PDF baixando o TXT
                 return;
             }
 
@@ -817,12 +901,15 @@
                                 font-size: 12px; 
                                 margin: 0; 
                                 padding: 10px;
-                                width: 280px;
+                                width: 280px; /* Largura aproximada de 80mm */
                             }
                             .conteudo-termica { white-space: pre-line; line-height: 1.2; }
                             @media print {
                                 body { margin: 0; padding: 5px; }
-                                @page { margin: 0; size: 80mm auto; }
+                                @page { 
+                                    margin: 0; 
+                                    size: 80mm auto; /* Define o tamanho do papel */
+                                }
                             }
                         </style>
                     </head>
@@ -847,22 +934,23 @@
             }
         }
 
+        // A função "PDF" na verdade baixa um .txt, mantive esse comportamento
         function imprimirPDF() {
             try {
-                const conteudo = gerarConteudoTermica();
-                const blob = new Blob([conteudo], { type: 'text/plain' });
+                const conteudo = gerarConteudoTermica(); // Usando o formato de 80mm
+                const blob = new Blob([conteudo], { type: 'text/plain; charset=utf-8' });
                 const url = URL.createObjectURL(blob);
                 
                 const link = document.createElement('a');
                 link.href = url;
-                link.download = `orcamento_${orcamentoData.cliente || 'cliente'}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.txt`;
+                link.download = `orcamento_termica_${orcamentoData.cliente || 'cliente'}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.txt`;
                 link.click();
                 
                 URL.revokeObjectURL(url);
-                mostrarAlerta('✅ PDF gerado e baixado com sucesso!', 'success');
+                mostrarAlerta('✅ Arquivo .txt (simulação de PDF) gerado com sucesso!', 'success');
                 
             } catch (error) {
-                console.error('❌ Erro ao gerar PDF:', error);
+                console.error('❌ Erro ao gerar PDF (txt):', error);
                 mostrarAlerta('❌ Erro ao gerar PDF: ' + error.message, 'error');
             }
         }
@@ -885,12 +973,41 @@
 
         function formatarData(data) {
             if (!data) return 'Data inválida';
-            if (data.includes('/')) return data;
-            if (data.includes('-')) {
+            // Se já estiver no formato dd/mm/yyyy
+            if (data.includes('/') && data.length === 10) return data;
+            
+            let dataObj;
+            // Se estiver no formato ISO (2025-10-30T...)
+            if (data.includes('T')) {
+                dataObj = new Date(data);
+            } 
+            // Se estiver no formato YYYY-MM-DD
+            else if (data.includes('-') && data.length === 10) {
                 const [ano, mes, dia] = data.split('-');
-                return `${dia}/${mes}/${ano}`;
+                dataObj = new Date(ano, mes - 1, dia);
+            } 
+            // Se for um objeto Date
+            else if (data instanceof Date) {
+                 dataObj = data;
+            } 
+            // Tenta criar uma data
+            else {
+                dataObj = new Date(data);
             }
-            return data;
+
+            // Verifica se a data é válida
+            if (isNaN(dataObj.getTime())) {
+                return data; // Retorna o original se for inválido
+            }
+
+            // Adiciona 1 dia (ajuste comum para fuso horário UTC)
+            dataObj.setDate(dataObj.getDate() + 1);
+            
+            const dia = String(dataObj.getDate()).padStart(2, '0');
+            const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
+            const ano = dataObj.getFullYear();
+            
+            return `${dia}/${mes}/${ano}`;
         }
     </script>
 </body>

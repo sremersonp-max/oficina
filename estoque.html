@@ -56,7 +56,8 @@
         }
         .filtros-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            /* MODIFICADO: Ajuste no grid para caber o novo filtro */
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 15px;
             align-items: end;
         }
@@ -65,21 +66,39 @@
             gap: 10px;
             margin-top: 10px;
         }
+
+        /* NOVO: Estilo para o checkbox de filtro */
+        .filtro-checkbox {
+            align-self: end; 
+            padding-bottom: 10px;
+        }
+        .filtro-checkbox label {
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .filtro-checkbox input {
+            width: auto; 
+            margin-top: 0;
+            transform: scale(1.1);
+        }
+
     </style>
 </head>
 <body>
     <div class="container">
         <div class="card" style="margin-bottom: 25px;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-    <h1>🏭 Gestão de Estoque</h1>
-    <div style="display: flex; gap: 10px;">
-        <a href="index.html" class="btn btn-secondary">🏠 Início</a>
-        <a href="produtos.html" class="btn btn-primary">🧮 Produtos</a>
-        <a href="orcamento.html" class="btn btn-success">📋 Orçamentos</a>
-        <a href="pedidos.html" class="btn btn-warning">🚚 Pedidos</a> 
-        <a href="relatorios_estoque.html" class="btn btn-info">📊 Relatórios</a> 
-    </div>
-</div>
+                <h1>🏭 Gestão de Estoque</h1>
+                <div style="display: flex; gap: 10px;">
+                    <a href="index.html" class="btn btn-secondary">🏠 Início</a>
+                    <a href="produtos.html" class="btn btn-primary">🧮 Produtos</a>
+                    <a href="orcamento.html" class="btn btn-success">📋 Orçamentos</a>
+                    <a href="pedidos.html" class="btn btn-warning">🚚 Pedidos</a> 
+                    <a href="relatorios_estoque.html" class="btn btn-info">📊 Relatórios</a> 
+                </div>
             </div>
         </div>
 
@@ -132,7 +151,6 @@
         </div>
 
         <div class="card">
-            <!-- NOVA SEÇÃO DE FILTROS -->
             <div class="filtros-container">
                 <div class="filtros-header">
                     <h3 style="margin: 0;">🔍 Filtros de Busca</h3>
@@ -168,6 +186,13 @@
                             <option value="un">Unidade (un)</option>
                             <option value="kg">Quilo (kg)</option>
                         </select>
+                    </div>
+
+                    <div class="form-group filtro-checkbox">
+                        <label for="filtroEmEstoque">
+                            <input type="checkbox" id="filtroEmEstoque" onchange="aplicarFiltros()">
+                            <span>Apenas com estoque</span>
+                        </label>
                     </div>
                 </div>
                 
@@ -293,6 +318,8 @@
             const filtroCategoria = document.getElementById('filtroCategoria').value;
             const filtroLinha = document.getElementById('filtroLinha').value;
             const filtroUnidadeMedida = document.getElementById('filtroUnidadeMedida').value;
+            // NOVO: Lê o valor do checkbox de estoque
+            const filtroEmEstoque = document.getElementById('filtroEmEstoque').checked;
 
             const itensFiltrados = todosItens.filter(item => {
                 // Filtro por nome
@@ -318,10 +345,12 @@
                 return true;
             });
 
-            exibirItensFiltrados(itensFiltrados);
+            // MODIFICADO: Passa o filtro de estoque para a função de exibição
+            exibirItensFiltrados(itensFiltrados, filtroEmEstoque);
         }
 
-        async function exibirItensFiltrados(itens) {
+        // MODIFICADO: Recebe o parâmetro 'filtroEmEstoque'
+        async function exibirItensFiltrados(itens, filtroEmEstoque = false) {
             const lista = document.getElementById('listaItens');
 
             if (itens.length === 0) {
@@ -330,8 +359,22 @@
             }
 
             let html = '';
+            let contadorItensExibidos = 0; // NOVO: Contador
+
             for (const item of itens) {
+                // Carrega as variações deste item (necessário para checar o estoque)
                 const variacoes = await estoqueFunctions.carregarVariacoesDeItem(item.id);
+
+                // NOVO: Lógica de filtro de estoque
+                if (filtroEmEstoque) {
+                    const estoqueTotalItem = variacoes.reduce((acc, v) => acc + v.quantidade_estoque, 0);
+                    if (estoqueTotalItem <= 0) {
+                        continue; // Pula a renderização deste item
+                    }
+                }
+                
+                contadorItensExibidos++; // Conta apenas os itens que passarão pelo filtro
+
                 const nomeLinha = item.linhas ? item.linhas.nome : 'Sem linha';
                 
                 // Formatação da data de cadastro para melhor visualização
@@ -366,7 +409,13 @@
                     </div>
                 </div>`;
             }
-            lista.innerHTML = html;
+            
+            // NOVO: Verifica se algum item foi exibido após o filtro de estoque
+            if (contadorItensExibidos === 0) {
+                 lista.innerHTML = '<div class="muted">Nenhum item encontrado com os filtros aplicados.</div>';
+            } else {
+                lista.innerHTML = html;
+            }
         }
 
         function renderVariacoes(variacoes, unidade_medida) {
@@ -406,11 +455,15 @@
             document.getElementById('filtroCategoria').value = '';
             document.getElementById('filtroLinha').value = '';
             document.getElementById('filtroUnidadeMedida').value = '';
+            // NOVO: Limpa o checkbox
+            document.getElementById('filtroEmEstoque').checked = false;
             aplicarFiltros();
         }
 
         function expandirTodos() {
             todosItens.forEach(item => {
+                // MODIFICADO: Verifica se o elemento existe antes de tentar acessá-lo
+                // (Pode não existir se foi filtrado pelo filtro de estoque)
                 const content = document.getElementById(`content-${item.id}`);
                 if (content) {
                     content.style.display = 'block';
@@ -420,6 +473,7 @@
 
         function recolherTodos() {
             todosItens.forEach(item => {
+                // MODIFICADO: Verifica se o elemento existe
                 const content = document.getElementById(`content-${item.id}`);
                 if (content) {
                     content.style.display = 'none';

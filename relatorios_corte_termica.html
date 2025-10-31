@@ -1,127 +1,125 @@
-        // =============================================================================
-        // NOVO: GERAÇÃO DE ARQUIVO DE TEXTO (TXT) PARA CORTE
-        // =============================================================================
-        /**
-         * Gera um arquivo de texto (.txt) com a lista de cortes de perfis.
-         */
-        function gerarArquivoTextoCorte() {
-            if (produtosOrcamento.length === 0) {
-                alert('❌ Adicione produtos ao orçamento primeiro.');
-                return;
-            }
-            
-            // Reutiliza a função de cálculo de cortes do folha_corte.html
-            // Precisa simular o objeto de orçamento para a função 'gerarFolhaDeCorte'
-            const orcamentoSimulado = {
-                id: editandoOrcamentoId || 'NOVO',
-                cliente: document.getElementById('nomeCliente').value,
-                localizacao: document.getElementById('localizacaoObra').value,
-                data: document.getElementById('dataOrcamento').value,
-                produtos: produtosOrcamento, // A lista de produtos atuais
-                // Não precisa de margem/total para este cálculo
-            };
+// =============================================================================
+// GERAÇÃO DE ARQUIVO TXT PARA IMPRESSORA TÉRMICA 55mm
+// =============================================================================
+function gerarArquivoTextoCorte() {
+    if (produtosOrcamento.length === 0) {
+        alert('❌ Adicione produtos ao orçamento primeiro.');
+        return;
+    }
+    
+    const orcamentoSimulado = {
+        id: editandoOrcamentoId || 'NOVO',
+        cliente: document.getElementById('nomeCliente').value,
+        localizacao: document.getElementById('localizacaoObra').value,
+        data: document.getElementById('dataOrcamento').value,
+        produtos: produtosOrcamento,
+    };
 
-            // NOTA: Para que este código funcione, você precisa copiar as funções 
-            // `gerarFolhaDeCorte`, `determineVariacaoId` e `calcularQuantidadeFormula` 
-            // do seu `folha_corte.html` e colá-las neste arquivo `orcamento.html`. 
-            // Como essas funções são grandes, farei o seguinte: 
-            // 1. Vou assumir que você as copiará (para não poluir este código).
-            // 2. Vou criar uma versão simplificada de `gerarFolhaDeCorte` (mas você deve 
-            //    usar a versão completa do `folha_corte.html` para precisão).
+    // *** AVISO: SUBSTITUA ESTA FUNÇÃO PELA VERSÃO REAL DO folha_corte.html ***
+    const dadosCorte = simularGerarFolhaDeCorte(orcamentoSimulado); 
+    
+    // --- CONFIGURAÇÕES PARA 55mm ---
+    const LARGURA_MAXIMA = 32; // Caracteres para 55mm
+    
+    // --- GERAÇÃO DO CONTEÚDO TXT PARA 55mm ---
+    let outputText = '';
+    
+    // Cabeçalho otimizado para 55mm
+    outputText += pad("", LARGURA_MAXIMA, 'center', '=') + "\n";
+    outputText += pad("LISTA DE CORTES", LARGURA_MAXIMA, 'center') + "\n";
+    outputText += pad("OFICINA DA FAMILIA", LARGURA_MAXIMA, 'center') + "\n";
+    outputText += pad("", LARGURA_MAXIMA, 'center', '=') + "\n\n";
 
-            // === CÓDIGO SIMULADO (Substituir pela versão completa) ===
-            function simularGerarFolhaDeCorte(orcamento) {
-                // ESTE É UM CÓDIGO PLACEHOLDER.
-                // VOCÊ DEVE SUBSTITUIR PELAS FUNÇÕES REAIS:
-                // `gerarFolhaDeCorte`, `determineVariacaoId`, `calcularQuantidadeFormula`
-                console.warn("Usando lógica simplificada. Substitua pelas funções completas de folha_corte.html!");
-                const cortesSimulados = new Map();
-                
-                orcamento.produtos.forEach(prod => {
-                    if (!prod.isAvulso) {
-                        const nome = produtosCadastrados.find(p => p.id == prod.produtoId)?.nome || 'Produto';
-                        cortesSimulados.set(`SIMULADO ${nome} | BRANCO`, [
-                            { medida_mm: 1200, quantidade: prod.quantidade * 2, origens: [] },
-                            { medida_mm: 850, quantidade: prod.quantidade * 4, origens: [] }
-                        ]);
-                    }
-                });
-                return cortesSimulados;
-            }
-            // =======================================================
-            
-            // *** AVISO: SUBSTITUA A FUNÇÃO 'simularGerarFolhaDeCorte' PELA VERSÃO COMPLETA DO 'folha_corte.html' ***
-            const dadosCorte = simularGerarFolhaDeCorte(orcamentoSimulado); 
-            
-            // --- Geração do Conteúdo TXT (Formato Texto Puro) ---
-            let outputText = '';
-            
-            outputText += "========================================\n";
-            outputText += pad("LISTA DE CORTES - OFICINA", 40, 'center') + "\n";
-            outputText += "========================================\n\n";
+    // Informações do cliente (otimizadas para 55mm)
+    outputText += "CLI: " + (orcamentoSimulado.cliente || '---').substring(0, 28).toUpperCase() + "\n";
+    outputText += "LOC: " + (orcamentoSimulado.localizacao || '---').substring(0, 28).toUpperCase() + "\n";
+    outputText += "ORC: " + orcamentoSimulado.id + "\n";
+    outputText += "DATA: " + (orcamentoSimulado.data || new Date().toLocaleDateString('pt-BR')) + "\n";
+    outputText += pad("", LARGURA_MAXIMA, 'center', '-') + "\n";
+    
+    const chavesPerfil = Array.from(dadosCorte.keys()).sort();
+    
+    if (chavesPerfil.length === 0) {
+        outputText += pad("NENHUM CORTE", LARGURA_MAXIMA, 'center') + "\n";
+    } else {
+        // Cabeçalho da tabela otimizado
+        outputText += "QTD X MEDIDA (MM)\n";
+        outputText += pad("", LARGURA_MAXIMA, 'center', '-') + "\n";
 
-            outputText += "CLIENTE: " + (orcamentoSimulado.cliente || '---').toUpperCase().substring(0, 31) + "\n";
-            outputText += "LOCAL:   " + (orcamentoSimulado.localizacao || '---').toUpperCase().substring(0, 31) + "\n";
-            outputText += "ORC # " + (orcamentoSimulado.id) + " | DATA: " + (orcamentoSimulado.data) + "\n";
-            outputText += "\n========================================\n";
+        chavesPerfil.forEach(chave => {
+            const cortesDoPerfil = dadosCorte.get(chave);
+            const [nomePerfil, cor] = chave.split(' | ');
             
-            const chavesPerfil = Array.from(dadosCorte.keys()).sort();
+            // Nome do perfil otimizado para 55mm
+            const perfilFormatado = (nomePerfil + ' - ' + cor).substring(0, 30).toUpperCase();
+            outputText += "\n" + perfilFormatado + "\n";
+            outputText += pad("", perfilFormatado.length, 'center', '~') + "\n";
             
-            if (chavesPerfil.length === 0) {
-                outputText += pad("NENHUM PERFIL PARA CORTE ENCONTRADO", 40, 'center') + "\n";
-            } else {
-                outputText += " " + pad("MEDIDA(MM)", 15, 'center') + pad("QTD", 10, 'center') + "  PERFIL/COR\n";
-                outputText += "----------------------------------------\n";
+            // Lista de cortes
+            cortesDoPerfil.forEach(corte => {
+                const medidaStr = corte.medida_mm.toString();
+                const qtdStr = corte.quantidade.toString();
 
-                chavesPerfil.forEach(chave => {
-                    const cortesDoPerfil = dadosCorte.get(chave);
-                    const [nomePerfil, cor] = chave.split(' | ');
-                    
-                    outputText += "\n [" + (nomePerfil + ' - ' + cor).toUpperCase().substring(0, 37) + " ]\n";
-                    
-                    cortesDoPerfil.forEach(corte => {
-                        const medidaStr = corte.medida_mm.toString();
-                        const qtdStr = corte.quantidade.toString();
-
-                        // Formato: [QTD] x [MEDIDA]
-                        outputText += pad(qtdStr, 10, 'right') + " x " + pad(medidaStr, 15, 'right') + " MM\n";
-                    });
-                });
-            }
-
-            outputText += "\n========================================\n";
-            outputText += pad("FIM DO RELATÓRIO", 40, 'center') + "\n";
+                // Formato compacto: [QTD]x[MEDIDA]mm
+                const linhaCorte = pad(qtdStr, 3, 'right') + " x " + pad(medidaStr, 4, 'right') + "mm";
+                outputText += linhaCorte + "\n";
+            });
             
-            // --- 3. DOWNLOAD DO ARQUIVO ---
-            const filename = `CORTES_${orcamentoSimulado.cliente.replace(/[^a-zA-Z0-9]/g, '_')}_${orcamentoSimulado.id}.txt`;
-            const blob = new Blob([outputText], { type: 'text/plain;charset=utf-8' });
-            
-            // Cria um link temporário para download
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = filename;
-            
-            // Simula o clique e remove o link
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            outputText += "\n";
+        });
+    }
 
-            alert(`✅ Arquivo ${filename} gerado com sucesso!`);
+    outputText += pad("", LARGURA_MAXIMA, 'center', '=') + "\n";
+    outputText += pad("FIM DO RELATORIO", LARGURA_MAXIMA, 'center') + "\n";
+    outputText += pad("", LARGURA_MAXIMA, 'center', '=') + "\n";
+    
+    // --- DOWNLOAD DO ARQUIVO ---
+    const filename = `CORTES_55mm_${orcamentoSimulado.id}.txt`;
+    const blob = new Blob([outputText], { type: 'text/plain;charset=utf-8' });
+    
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    alert(`✅ Arquivo ${filename} gerado para 55mm!`);
+}
+
+// FUNÇÃO AUXILIAR ATUALIZADA PARA 55mm
+function pad(str, len, align = 'right', char = ' ') {
+    str = String(str);
+    if (str.length >= len) return str.substring(0, len);
+    
+    const padding = char.repeat(len - str.length);
+    
+    switch(align) {
+        case 'left':
+            return str + padding;
+        case 'center':
+            const leftPadding = char.repeat(Math.floor((len - str.length) / 2));
+            const rightPadding = char.repeat(len - str.length - leftPadding.length);
+            return leftPadding + str + rightPadding;
+        default: // right
+            return padding + str;
+    }
+}
+
+// ⚠️ FUNÇÃO TEMPORÁRIA - SUBSTITUIR PELA VERSÃO REAL DO folha_corte.html
+function simularGerarFolhaDeCorte(orcamento) {
+    console.warn("⚠️ USANDO LÓGICA SIMULADA - Substitua pelas funções reais do folha_corte.html");
+    const cortesSimulados = new Map();
+    
+    orcamento.produtos.forEach(prod => {
+        if (!prod.isAvulso) {
+            const nome = "PERFIL TESTE";
+            cortesSimulados.set(`${nome} | BRANCO`, [
+                { medida_mm: 1200, quantidade: prod.quantidade * 2, origens: [] },
+                { medida_mm: 850, quantidade: prod.quantidade * 4, origens: [] }
+            ]);
         }
-        
-        // Função auxiliar de alinhamento (pad) - COPIAR TAMBÉM!
-        function pad(str, len, align = 'right') {
-            str = String(str);
-            if (str.length >= len) return str.substring(0, len);
-            const padding = ' '.repeat(len - str.length);
-            return align === 'left' ? str + padding : padding + str;
-        }
-
-        // =============================================================================
-        // AÇÃO OBRIGATÓRIA: COPIAR FUNÇÕES DE CORTE
-        // =============================================================================
-        // Para que `gerarArquivoTextoCorte()` funcione corretamente, você deve COPIAR
-        // as funções completas `gerarFolhaDeCorte`, `determineVariacaoId` e 
-        // `calcularQuantidadeFormula` do seu arquivo `folha_corte.html` e colá-las 
-        // no script do `orcamento.html`. Substitua o 'simularGerarFolhaDeCorte' pela real.
-
+    });
+    return cortesSimulados;
+}

@@ -1770,7 +1770,7 @@
         // FIM novoOrçamento
 
         // =============================================================================
-        // GESTÃO DE ESTOQUE (BAIXA/REVERSÃO) (COM ALTERAÇÃO PARA ITENS AVULSOS)
+        // GESTÃO DE ESTOQUE (BAIXA/REVERSÃO) (SEM ALTERAÇÃO)
         // =============================================================================
 
         // INÍCIO darBaixaEstoque
@@ -1805,20 +1805,13 @@
         }
         // FIM reverterBaixaEstoque
 
-        // INÍCIO calcularMudancasEstoque (MODIFICADA - agora inclui itens avulsos)
+        // INÍCIO calcularMudancasEstoque
         async function calcularMudancasEstoque(orcamento) {
             const stockUpdates = new Map(); // { variacao_id: quantidade_a_mudar }
             if (produtosCadastrados.length === 0) await carregarProdutos(); // Garante receitas
 
             for (const prodOrc of orcamento.produtos) {
-                if (prodOrc.isAvulso) {
-                    // TRATAMENTO PARA ITENS AVULSOS
-                    if (prodOrc.variacaoId && prodOrc.quantidade > 0) {
-                        const quantidadeAtual = stockUpdates.get(prodOrc.variacaoId) || 0;
-                        stockUpdates.set(prodOrc.variacaoId, quantidadeAtual + prodOrc.quantidade);
-                    }
-                    continue; 
-                }
+                if (prodOrc.isAvulso) continue; 
                 
                 const receita = produtosCadastrados.find(p => p.id == prodOrc.produtoId);
                 if (!receita || !receita.itens_composicao) continue;

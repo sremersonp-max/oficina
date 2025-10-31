@@ -83,10 +83,10 @@
             font-size: 12px;
         }
         
-        /* Estilo para a linha de composição do seu arquivo original */
+        /* Estilo ATUALIZADO para a linha de composição - 6 colunas */
         .linha-composicao {
             display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr auto;
+            grid-template-columns: 2fr 1fr 0.8fr 0.8fr 1fr auto;
             gap: 10px;
             margin-bottom: 10px;
             align-items: end;
@@ -672,7 +672,7 @@
         }
 
         // =============================================================================
-        // SUAS FUNÇÕES DE COMPOSIÇÃO (NÃO MODIFICADAS)
+        // FUNÇÕES DE COMPOSIÇÃO - ATUALIZADAS COM quantidade_formula
         // =============================================================================
 
         function adicionarLinha(item = null) {
@@ -681,6 +681,7 @@
                 item_id: '', 
                 item_nome: '', 
                 formula: '(L*2)+(A*2)', 
+                quantidade_formula: 1, // ✅ CAMPO ADICIONADO
                 substituivel: false,
                 tipo_item: ''
             };
@@ -693,7 +694,8 @@
             ).join('');
             
             const linhaHTML = `
-                <div class="linha-composicao" id="${idLinha}"> <div class="form-group">
+                <div class="linha-composicao" id="${idLinha}">
+                    <div class="form-group">
                         <label>Item do Estoque (Modelo Base)</label>
                         <select onchange="atualizarDadosLinha('${idLinha}', 'item_id', this.value)">
                             <option value="">Selecione um item modelo...</option>
@@ -715,6 +717,13 @@
                         <input type="text" class="input-formula" value="${itemData.formula}" 
                                onchange="atualizarDadosLinha('${idLinha}', 'formula', this.value)"
                                placeholder="(L*2)+(A*2)">
+                    </div>
+                    <div class="form-group">
+                        <label>Qtd. Fórmula</label>
+                        <input type="number" value="${itemData.quantidade_formula || 1}" 
+                               class="mini-input" min="1" step="1"
+                               onchange="atualizarDadosLinha('${idLinha}', 'quantidade_formula', parseInt(this.value))"
+                               title="Quantidade para multiplicar o resultado da fórmula">
                     </div>
                     <div class="form-group" style="text-align:center;">
                         <label>Substituível?</label>
@@ -745,7 +754,7 @@
         }
 
         // =============================================================================
-        // CRUD DE PRODUTOS - ATUALIZADO PARA SALVAR IMAGENS/SVG E QUANTIDADES
+        // CRUD DE PRODUTOS - ATUALIZADO PARA SALVAR quantidade_formula
         // =============================================================================
         async function salvarProduto() {
             const nome = document.getElementById('nomeProduto').value.trim();
@@ -766,7 +775,7 @@
                 alert('⚠️ Atenção: Algumas fórmulas de vidro não foram salvas. Verifique se preencheu Peça, Fórmulas e a Imagem em todas.');
             }
             
-            // Sua lógica de composição (não modificada)
+            // Sua lógica de composição (AGORA COM quantidade_formula)
             const composicaoFinal = linhasItens
                 .filter(l => l.item_id && l.item_id !== '')
                 .map(({ idLinha, ...resto }) => resto);
@@ -845,7 +854,7 @@
             document.getElementById('nomeProduto').value = produto.nome;
             document.getElementById('categoriaProduto').value = produto.categoria_id;
             
-            // Sua lógica de composição (não modificada)
+            // Sua lógica de composição (AGORA COM quantidade_formula)
             document.getElementById('itensComposicao').innerHTML = '';
             linhasItens = [];
             if (produto.itens_composicao && produto.itens_composicao.length > 0) {
@@ -1012,7 +1021,7 @@
             }
         }
 
-        // Sua função de visualizar composição (não modificada)
+        // Sua função de visualizar composição (ATUALIZADA para mostrar quantidade_formula)
         function visualizarComposicao(id) {
             const produto = produtosCadastrados.find(p => p.id === id);
             if (!produto) return;
@@ -1027,12 +1036,14 @@
                     const itemPai = itensPaiEstoque.find(i => i.id == item.item_id);
                     const nomeItem = itemPai ? itemPai.nome : `Item ID ${item.item_id} não encontrado`;
                     const tipoItem = item.tipo_item || 'Não Definido';
+                    const quantidadeFormula = item.quantidade_formula || 1;
 
                     return `
                         <div style="padding: 10px 0; border-bottom: 1px solid #f0f0f0;">
                             <strong>${nomeItem}</strong>
                             <span class="badge ${item.tipo_item === 'Perfis' || item.tipo_item === 'Acessorios' ? 'badge-primary' : 'badge-secondary'}" style="margin-left: 10px; font-size: 11px;">${tipoItem}</span>
                             ${item.substituivel ? '<span class="badge-substituivel">Substituível</span>' : ''}
+                            <span class="badge" style="background: #17a2b8; color: white; margin-left: 5px; font-size: 11px;">Qtd: ${quantidadeFormula}</span>
                             <br>
                             <small class="text-muted">Fórmula: ${item.formula || '(L*2)+(A*2)'}</small>
                         </div>`;
