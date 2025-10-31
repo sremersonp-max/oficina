@@ -850,15 +850,15 @@
             
             // Observações
             conteudo += '\n';
-            conteudo += 'OBS: Sem vidros e perfis\n';
+            conteudo += 'Emerson Penteado\n';
             conteudo += linhaDivisoria('-') + '\n';
             conteudo += 'Gerado: ' + new Date().toLocaleDateString('pt-BR') + '\n';
             conteudo += '📞 (42) 99960-8330\n\n';
             
             // Código de barras simulado
-            conteudo += '|'.repeat(larguraLinha) + '\n';
+         
             conteudo += `COD: ${orcamentoData.id || 'TEMP'}`.padStart(larguraLinha) + '\n';
-            conteudo += '|'.repeat(larguraLinha) + '\n';
+            
 
             return conteudo;
         }
