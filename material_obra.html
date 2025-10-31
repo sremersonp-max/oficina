@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Material da Obra - Orçamentos</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 25px 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        
+        .content {
+            padding: 25px 30px;
+        }
+        
+        .config-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+        
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .preview-section {
+            background: white;
+            border: 2px dashed #bdc3c7;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .preview-title {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-weight: bold;
+            font-size: 20px;
+        }
+        
+        .material-preview {
+            background: white;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+            padding: 15px;
+            border: 1px solid #34495e;
+            white-space: pre-line;
+            min-height: 300px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+        }
+        
+        .alert {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .alert-success {
+            background: #d5f4e6;
+            color: #27ae60;
+            border: 1px solid #27ae60;
+        }
+        
+        .alert-error {
+            background: #fde8e8;
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #0c5460;
+        }
+        
+        .linha-divisoria {
+            border-top: 1px dashed #7f8c8d;
+            margin: 10px 0;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+        
+        .text-bold {
+            font-weight: bold;
+        }
+        
+        .orcamentos-salvos {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        
+        .orcamento-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+        
+        .orcamento-item:hover {
+            background: #f0f8ff;
+        }
+        
+        .orcamento-item:last-child {
+            border-bottom: none;
+        }
+        
+        .actions-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .actions-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Material da Obra</h1>
+            <p>Relação de material necessário (exceto vidros e perfis)</p>
+        </div>
+	 <div class="header">
+            <h1>🏭 Sistema de Orçamentos - Esquadrias</h1>
+            <a href="comeco.html" class="btn btn-secondary" style="margin-top: 15px;">⬅️ Voltar ao Início</a>
+        </div>
+
+        <div class="content">
+            <div id="alertContainer"></div>
+
+            <div class="config-section" id="seletorOrcamentos">
+                <h3>📋 Selecionar Orçamento</h3>
+                <div class="form-group">
+                    <label for="selectOrcamentoSalvo">Orçamentos Aprovados</label>
+                    <select id="selectOrcamentoSalvo" onchange="carregarOrcamentoSelecionado()">
+                        <option value="">Selecione um orçamento aprovado...</option>
+                    </select>
+                </div>
+                <div class="loading" id="loadingOrcamentos">Carregando orçamentos...</div>
+                <div class="text-center" style="margin-top: 10px;">
+                    <small class="text-muted">Selecione um orçamento aprovado para gerar a lista de material</small>
+                </div>
+            </div>
+
+            <div class="config-section" id="infoOrcamento">
+                <h3>📋 Dados do Orçamento</h3>
+                <div class="loading" id="loadingOrcamento">Selecione um orçamento para visualizar os dados</div>
+                <div id="dadosOrcamento" class="hidden">
+                    <div class="form-group">
+                        <label>Cliente</label>
+                        <input type="text" id="cliente" readonly>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label>Telefone</label>
+                            <input type="text" id="telefone" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Data</label>
+                            <input type="text" id="dataOrcamento" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Localização</label>
+                        <input type="text" id="localizacao" readonly>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Observações</label>
+                        <textarea id="observacoes" readonly></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="actions-section">
+                <button class="btn btn-primary" onclick="carregarMaterialObra()">
+                    📋 Gerar Lista de Material
+                </button>
+                
+                <button class="btn btn-info" onclick="imprimirTermica55Linhas()" id="btnImprimirTermica" disabled>
+                    🖨️ Impressão Térmica 55L
+                </button>
+                
+                <button class="btn btn-success" onclick="imprimirMaterialObra()" id="btnImprimir" disabled>
+                    🖨️ Imprimir Lista
+                </button>
+                
+                <button class="btn btn-warning" onclick="exportarMaterialObra()" id="btnExportar" disabled>
+                    📄 Exportar para TXT
+                </button>
+                
+                <button class="btn btn-danger" onclick="window.close()">
+                    ❌ Fechar
+                </button>
+            </div>
+
+            <div class="preview-section hidden" id="previewSection">
+                <div class="preview-title">LISTA DE MATERIAL DA OBRA</div>
+                <div class="material-preview" id="materialPreview">
+                    <!-- Conteúdo será gerado aqui -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        // =============================================================================
+        // VARIÁVEIS GLOBAIS
+        // =============================================================================
+        let orcamentoData = null;
+        let orcamentosSalvos = [];
+        let produtosCadastrados = [];
+        let itensPai = [];
+        let variacoesCadastradas = [];
+        let materialObra = [];
+
+        // =============================================================================
+        // INICIALIZAÇÃO
+        // =============================================================================
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('📋 Iniciando sistema de material da obra...');
+            await carregarDadosEstoque();
+            await carregarOrcamentosSalvos();
+        });
+
+        // =============================================================================
+        // CARREGAMENTO DE DADOS DO ESTOQUE
+        // =============================================================================
+        async function carregarDadosEstoque() {
+            try {
+                console.log('📦 Carregando dados do estoque...');
+                
+                const [itensPaiRes, variacoesRes] = await Promise.all([
+                    supabase.from('itens').select('*, categorias(nome), linhas(nome)').eq('ativo', true),
+                    supabase.from('item_variacoes').select('*, cores(nome), itens(nome, categorias(nome))')
+                ]);
+
+                if (itensPaiRes.error) throw itensPaiRes.error;
+                if (variacoesRes.error) throw variacoesRes.error;
+
+                itensPai = itensPaiRes.data || [];
+                variacoesCadastradas = variacoesRes.data || [];
+                
+                console.log(`✅ ${itensPai.length} itens e ${variacoesCadastradas.length} variações carregadas`);
+                
+            } catch (error) {
+                console.error('❌ Erro ao carregar dados do estoque:', error);
+                mostrarAlerta('❌ Erro ao carregar dados do estoque: ' + error.message, 'error');
+            }
+        }
+
+        // =============================================================================
+        // CARREGAMENTO DE ORÇAMENTOS SALVOS
+        // =============================================================================
+        async function carregarOrcamentosSalvos() {
+            try {
+                console.log('🗃️ Carregando orçamentos salvos...');
+                
+                const { data, error } = await supabase
+                    .from('orcamentos')
+                    .select('id, cliente, data, status, total, margem')
+                    .eq('status', 'aprovado')
+                    .order('data', { ascending: false })
+                    .limit(50);
+
+                if (error) throw error;
+
+                orcamentosSalvos = data || [];
+                atualizarSelectOrcamentos();
+                
+                console.log(`✅ ${orcamentosSalvos.length} orçamentos aprovados carregados`);
+                
+            } catch (error) {
+                console.error('❌ Erro ao carregar orçamentos:', error);
+                mostrarAlerta('❌ Erro ao carregar orçamentos salvos', 'error');
+            }
+        }
+
+        function atualizarSelectOrcamentos() {
+            const select = document.getElementById('selectOrcamentoSalvo');
+            const loading = document.getElementById('loadingOrcamentos');
+            
+            if (orcamentosSalvos.length === 0) {
+                loading.innerHTML = '❌ Nenhum orçamento aprovado encontrado';
+                return;
+            }
+
+            loading.classList.add('hidden');
+            
+            select.innerHTML = '<option value="">Selecione um orçamento aprovado...</option>' +
+                orcamentosSalvos.map(orc => {
+                    const dataFormatada = formatarData(orc.data);
+                    const totalVenda = (orc.total || 0) * (orc.margem || 1);
+                    return `<option value="${orc.id}">
+                        ${orc.cliente} - ${dataFormatada} - R$ ${totalVenda.toFixed(2)}
+                    </option>`;
+                }).join('');
+        }
+
+        // =============================================================================
+        // CARREGAMENTO DE DADOS DO ORÇAMENTO SELECIONADO
+        // =============================================================================
+        async function carregarOrcamentoSelecionado() {
+            const orcamentoId = document.getElementById('selectOrcamentoSalvo').value;
+            if (!orcamentoId) return;
+            
+            await carregarOrcamentoDoBanco(orcamentoId);
+        }
+
+        async function carregarOrcamentoDoBanco(orcamentoId) {
+            try {
+                console.log('🗃️ Carregando orçamento do banco:', orcamentoId);
+                
+                const { data, error } = await supabase
+                    .from('orcamentos')
+                    .select('id, cliente, telefone, localizacao, observacoes, data, status, produtos, total, margem')
+                    .eq('id', orcamentoId)
+                    .single();
+
+                if (error) throw error;
+                if (!data) throw new Error('Orçamento não encontrado');
+
+                orcamentoData = {
+                    id: data.id,
+                    cliente: data.cliente,
+                    telefone: data.telefone,
+                    localizacao: data.localizacao,
+                    observacoes: data.observacoes,
+                    data: data.data,
+                    status: data.status,
+                    produtos: data.produtos || [],
+                    total: data.total || 0,
+                    margem: data.margem || 1
+                };
+
+                console.log('✅ Orçamento carregado do banco:', orcamentoData);
+                preencherDadosOrcamento();
+                mostrarAlerta(`✅ Orçamento de ${orcamentoData.cliente} carregado!`, 'success');
+                
+            } catch (error) {
+                console.error('❌ Erro ao carregar orçamento do banco:', error);
+                mostrarAlerta('❌ Erro ao carregar orçamento: ' + error.message, 'error');
+            }
+        }
+
+        function preencherDadosOrcamento() {
+            if (!orcamentoData) return;
+
+            document.getElementById('cliente').value = orcamentoData.cliente || 'Não informado';
+            document.getElementById('telefone').value = orcamentoData.telefone || 'Não informado';
+            document.getElementById('localizacao').value = orcamentoData.localizacao || 'Não informado';
+            document.getElementById('observacoes').value = orcamentoData.observacoes || 'Não informado';
+            document.getElementById('dataOrcamento').value = orcamentoData.data ? formatarData(orcamentoData.data) : new Date().toLocaleDateString('pt-BR');
+
+            document.getElementById('loadingOrcamento').classList.add('hidden');
+            document.getElementById('dadosOrcamento').classList.remove('hidden');
+        }
+
+        // =============================================================================
+        // GERAÇÃO DA LISTA DE MATERIAL DA OBRA (EXCLUINDO VIDROS E PERFIS)
+        // =============================================================================
+        async function carregarMaterialObra() {
+            if (!orcamentoData) {
+                mostrarAlerta('❌ Selecione um orçamento primeiro.', 'error');
+                return;
+            }
+
+            try {
+                console.log('📋 Gerando lista de material da obra...');
+                
+                // Limpar material anterior
+                materialObra = [];
+                
+                // Processar cada produto do orçamento
+                for (const produto of orcamentoData.produtos) {
+                    if (produto.isAvulso) {
+                        // Processar itens avulsos (se não forem vidros ou perfis)
+                        await processarItemAvulso(produto);
+                    } else {
+                        // Processar produtos compostos
+                        await processarProdutoComposto(produto);
+                    }
+                }
+                
+                // Agrupar materiais por categoria
+                const materialAgrupado = agruparMaterialPorCategoria();
+                
+                // Gerar preview
+                gerarPreviewMaterial(materialAgrupado);
+                
+                document.getElementById('previewSection').classList.remove('hidden');
+                document.getElementById('btnImprimir').disabled = false;
+                document.getElementById('btnExportar').disabled = false;
+                document.getElementById('btnImprimirTermica').disabled = false;
+                
+                mostrarAlerta('✅ Lista de material gerada com sucesso!', 'success');
+                
+            } catch (error) {
+                console.error('❌ Erro ao gerar lista de material:', error);
+                mostrarAlerta('❌ Erro ao gerar lista de material: ' + error.message, 'error');
+            }
+        }
+
+        async function processarItemAvulso(produtoAvulso) {
+            // Verificar se é um item avulso que não é vidro ou perfil
+            const variacao = variacoesCadastradas.find(v => v.id === produtoAvulso.variacaoId);
+            if (!variacao) return;
+            
+            const itemPai = itensPai.find(i => i.id === variacao.item_id);
+            if (!itemPai) return;
+            
+            // Verificar se não é vidro ou perfil
+            if (isVidroOuPerfil(itemPai)) return;
+            
+            // Adicionar à lista de material
+            materialObra.push({
+                nome: itemPai.nome,
+                categoria: itemPai.categorias?.nome || 'Outros',
+                cor: variacao.cores?.nome || 'Sem cor',
+                quantidade: produtoAvulso.quantidade,
+                unidade: itemPai.unidade_medida || 'UN',
+                precoUnitario: produtoAvulso.precoUnitarioCusto || 0,
+                precoTotal: produtoAvulso.preco || 0
+            });
+        }
+
+        async function processarProdutoComposto(produto) {
+            // Buscar a receita do produto
+            const { data: produtoReceita, error } = await supabase
+                .from('produtos')
+                .select('*, produto_categorias(nome), itens_composicao')
+                .eq('id', produto.produtoId)
+                .single();
+
+            if (error || !produtoReceita) {
+                console.error('Erro ao carregar receita do produto:', error);
+                return;
+            }
+
+            // Processar cada item da composição
+            for (const itemComposicao of produtoReceita.itens_composicao || []) {
+                const itemPai = itensPai.find(i => i.id == itemComposicao.item_id);
+                if (!itemPai) continue;
+                
+                // Pular vidros e perfis
+                if (isVidroOuPerfil(itemPai)) continue;
+                
+                // Determinar a variação a ser usada
+                let variacaoId = null;
+                
+                if (itemComposicao.substituivel) {
+                    // Verificar se há substituição específica
+                    if (produto.substituicoes && produto.substituicoes[itemPai.id]) {
+                        variacaoId = produto.substituicoes[itemPai.id];
+                    }
+                    // Verificar se há cor geral para perfis/acessórios
+                    else if (produto.corGeralId && (itemComposicao.tipo_item === 'Perfis' || itemComposicao.tipo_item === 'Acessorios')) {
+                        const variacao = variacoesCadastradas.find(v => 
+                            v.item_id == itemPai.id && v.cor_id == produto.corGeralId
+                        );
+                        if (variacao) variacaoId = variacao.id;
+                    }
+                } else {
+                    // Usar variação padrão
+                    const variacaoPadrao = variacoesCadastradas.find(v => v.item_id == itemPai.id);
+                    if (variacaoPadrao) variacaoId = variacaoPadrao.id;
+                }
+                
+                if (!variacaoId) continue;
+                
+                const variacao = variacoesCadastradas.find(v => v.id == variacaoId);
+                if (!variacao) continue;
+                
+                // Calcular quantidade necessária
+                const L = produto.largura || 0;
+                const A = produto.altura || 0;
+                const QtdProd = produto.quantidade || 1;
+                
+                try {
+                    const qtdUnitaria = calcularQuantidadeFormula(itemComposicao.formula, L, A);
+                    const qtdTotal = qtdUnitaria * QtdProd;
+                    
+                    if (qtdTotal > 0) {
+                        materialObra.push({
+                            nome: itemPai.nome,
+                            categoria: itemPai.categorias?.nome || 'Outros',
+                            cor: variacao.cores?.nome || 'Sem cor',
+                            quantidade: qtdTotal,
+                            unidade: itemPai.unidade_medida || 'UN',
+                            precoUnitario: variacao.preco_venda || 0,
+                            precoTotal: qtdTotal * (variacao.preco_venda || 0)
+                        });
+                    }
+                } catch (e) {
+                    console.error(`Erro fórmula '${itemComposicao.formula}' no item ${itemPai.nome}`, e);
+                }
+            }
+        }
+
+        function isVidroOuPerfil(itemPai) {
+            const nome = itemPai.nome?.toLowerCase() || '';
+            const categoria = itemPai.categorias?.nome?.toLowerCase() || '';
+            
+            // Verificar se é vidro
+            if (nome.includes('vidro') || categoria.includes('vidro')) {
+                return true;
+            }
+            
+            // Verificar se é perfil
+            if (nome.includes('perfil') || categoria.includes('perfil') ||
+                nome.includes('alumínio') || categoria.includes('alumínio')) {
+                return true;
+            }
+            
+            return false;
+        }
+
+        function calcularQuantidadeFormula(formula, L, A) {
+            if (!formula || formula.trim() === '') return 1;
+            const formulaLower = formula.toLowerCase().trim();
+            let expressao = formulaLower.replace(/l/g, L.toString()).replace(/a/g, A.toString());
+            try {
+                const resultado = new Function(`return ${expressao}`)();
+                return parseFloat(resultado) || 0;
+            } catch (error) {
+                console.error(`Erro ao avaliar fórmula "${formula}" com L=${L}, A=${A} -> "${expressao}"`, error);
+                return 0;
+            }
+        }
+
+        function agruparMaterialPorCategoria() {
+            const agrupado = {};
+            
+            materialObra.forEach(item => {
+                if (!agrupado[item.categoria]) {
+                    agrupado[item.categoria] = [];
+                }
+                
+                // Verificar se já existe um item igual (mesmo nome e cor)
+                const itemExistente = agrupado[item.categoria].find(i => 
+                    i.nome === item.nome && i.cor === item.cor && i.unidade === item.unidade
+                );
+                
+                if (itemExistente) {
+                    // Somar quantidades
+                    itemExistente.quantidade += item.quantidade;
+                    itemExistente.precoTotal += item.precoTotal;
+                } else {
+                    agrupado[item.categoria].push({...item});
+                }
+            });
+            
+            return agrupado;
+        }
+
+        function gerarPreviewMaterial(materialAgrupado) {
+            const preview = document.getElementById('materialPreview');
+            let conteudo = '';
+            
+            // Cabeçalho
+            conteudo += '═'.repeat(60) + '\n';
+            conteudo += ' '.repeat(15) + '** MATERIAL DA OBRA **' + '\n';
+            conteudo += '═'.repeat(60) + '\n\n';
+            
+            // Dados do orçamento
+            conteudo += 'CLIENTE: ' + (orcamentoData.cliente || 'Não informado') + '\n';
+            conteudo += 'LOCAL: ' + (orcamentoData.localizacao || 'Não informado') + '\n';
+            conteudo += 'DATA: ' + (orcamentoData.data ? formatarData(orcamentoData.data) : new Date().toLocaleDateString('pt-BR')) + '\n';
+            conteudo += '─'.repeat(60) + '\n\n';
+            
+            // Lista de material por categoria
+            let totalGeral = 0;
+            const categorias = Object.keys(materialAgrupado).sort();
+            
+            if (categorias.length === 0) {
+                conteudo += 'Nenhum material encontrado (exceto vidros e perfis)\n';
+            } else {
+                categorias.forEach(categoria => {
+                    conteudo += `** ${categoria.toUpperCase()} **\n`;
+                    conteudo += '─'.repeat(60) + '\n';
+                    
+                    let totalCategoria = 0;
+                    const itens = materialAgrupado[categoria];
+                    
+                    itens.forEach((item, index) => {
+                        const linhaNumero = (index + 1).toString().padStart(2, '0');
+                        const linhaNome = `${linhaNumero}. ${item.nome}`.padEnd(35);
+                        const linhaCor = `(${item.cor})`.padEnd(15);
+                        const linhaQuantidade = `${item.quantidade.toFixed(2)} ${item.unidade}`.padEnd(15);
+                        const linhaPreco = `R$ ${item.precoTotal.toFixed(2)}`;
+                        
+                        conteudo += `${linhaNome}${linhaCor}${linhaQuantidade}${linhaPreco}\n`;
+                        totalCategoria += item.precoTotal;
+                    });
+                    
+                    conteudo += `TOTAL ${categoria}: R$ ${totalCategoria.toFixed(2)}\n\n`;
+                    totalGeral += totalCategoria;
+                });
+                
+                // Total geral
+                conteudo += '═'.repeat(60) + '\n';
+                conteudo += `TOTAL GERAL: R$ ${totalGeral.toFixed(2)}\n`;
+                conteudo += '═'.repeat(60) + '\n\n';
+            }
+            
+            // Observações
+            conteudo += 'OBS: Esta lista não inclui vidros e perfis, que possuem relatórios separados.\n';
+            conteudo += '─'.repeat(60) + '\n';
+            conteudo += 'Gerado em: ' + new Date().toLocaleString('pt-BR') + '\n';
+            
+            preview.textContent = conteudo;
+        }
+
+        // =============================================================================
+        // NOVA FUNÇÃO: IMPRESSÃO TÉRMICA 55 LINHAS
+        // =============================================================================
+        function imprimirTermica55Linhas() {
+            if (!orcamentoData) {
+                mostrarAlerta('❌ Selecione um orçamento primeiro.', 'error');
+                return;
+            }
+
+            try {
+                const conteudo = gerarConteudoTermica55Linhas();
+                
+                // Criar e baixar arquivo TXT formatado para impressora térmica
+                const blob = new Blob([conteudo], { 
+                    type: 'text/plain; charset=utf-8' 
+                });
+                
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `material_obra_55mm_${orcamentoData.cliente || 'cliente'}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.txt`;
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                URL.revokeObjectURL(url);
+                
+                mostrarAlerta('✅ Arquivo para impressora térmica 55mm gerado!', 'success');
+                
+                setTimeout(() => {
+                    mostrarAlerta('💡 Dica: Use o arquivo .txt com software de impressão térmica', 'info');
+                }, 2000);
+                
+            } catch (error) {
+                console.error('❌ Erro na geração do arquivo 55mm:', error);
+                mostrarAlerta('❌ Erro ao gerar arquivo: ' + error.message, 'error');
+            }
+        }
+
+        function gerarConteudoTermica55Linhas() {
+            if (!orcamentoData) return '';
+            
+            const materialAgrupado = agruparMaterialPorCategoria();
+            const larguraLinha = 35; // 55mm geralmente tem 35-40 caracteres
+            let conteudo = '';
+            
+            const centralizar = (texto) => {
+                const espacos = Math.max(0, larguraLinha - texto.length);
+                const espacosEsquerda = Math.floor(espacos / 2);
+                return ' '.repeat(espacosEsquerda) + texto;
+            };
+            
+            const linhaDivisoria = (caractere = '=') => caractere.repeat(larguraLinha);
+            
+            // Cabeçalho
+            conteudo += linhaDivisoria() + '\n';
+            conteudo += centralizar('OFICINA DA FAMÍLIA') + '\n';
+            conteudo += centralizar('MATERIAL DA OBRA') + '\n';
+            conteudo += linhaDivisoria() + '\n\n';
+            
+            // Dados do orçamento
+            conteudo += 'CLIENTE: ' + (orcamentoData.cliente || 'N/I') + '\n';
+            conteudo += 'LOCAL: ' + (orcamentoData.localizacao || 'N/I') + '\n';
+            conteudo += 'DATA: ' + (orcamentoData.data ? formatarData(orcamentoData.data) : new Date().toLocaleDateString('pt-BR')) + '\n';
+            conteudo += linhaDivisoria('-') + '\n\n';
+            
+            // Lista de material por categoria
+            let totalGeral = 0;
+            const categorias = Object.keys(materialAgrupado).sort();
+            
+            if (categorias.length === 0) {
+                conteudo += 'Nenhum material (sem vidros/perfis)\n';
+            } else {
+                categorias.forEach(categoria => {
+                    conteudo += categoria.toUpperCase() + ':\n';
+                    conteudo += linhaDivisoria('-') + '\n';
+                    
+                    let totalCategoria = 0;
+                    const itens = materialAgrupado[categoria];
+                    
+                    itens.forEach((item, index) => {
+                        const linhaNumero = (index + 1).toString().padStart(2, '0');
+                        const nomeCompacto = item.nome.substring(0, 18);
+                        const linhaNome = `${linhaNumero}. ${nomeCompacto}`;
+                        
+                        // Segunda linha: cor e quantidade
+                        const linhaDetalhes = `   (${item.cor}) ${item.quantidade.toFixed(2)}${item.unidade}`;
+                        
+                        conteudo += linhaNome + '\n';
+                        conteudo += linhaDetalhes + '\n';
+                        
+                        totalCategoria += item.precoTotal;
+                    });
+                    
+                    conteudo += `TOTAL ${categoria}: R$ ${totalCategoria.toFixed(2)}\n\n`;
+                    totalGeral += totalCategoria;
+                });
+                
+                // Total geral
+                conteudo += linhaDivisoria() + '\n';
+                conteudo += `TOTAL GERAL: R$ ${totalGeral.toFixed(2)}`.padStart(larguraLinha) + '\n';
+                conteudo += linhaDivisoria() + '\n';
+            }
+            
+            // Observações
+            conteudo += '\n';
+            conteudo += 'OBS: Sem vidros e perfis\n';
+            conteudo += linhaDivisoria('-') + '\n';
+            conteudo += 'Gerado: ' + new Date().toLocaleDateString('pt-BR') + '\n';
+            conteudo += '📞 (42) 99960-8330\n\n';
+            
+            // Código de barras simulado
+            conteudo += '|'.repeat(larguraLinha) + '\n';
+            conteudo += `COD: ${orcamentoData.id || 'TEMP'}`.padStart(larguraLinha) + '\n';
+            conteudo += '|'.repeat(larguraLinha) + '\n';
+
+            return conteudo;
+        }
+
+        // =============================================================================
+        // FUNÇÕES DE IMPRESSÃO E EXPORTAÇÃO
+        // =============================================================================
+        function imprimirMaterialObra() {
+            try {
+                const conteudo = document.getElementById('materialPreview').textContent;
+                
+                const janelaImpressao = window.open('', '_blank');
+                janelaImpressao.document.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Material da Obra - ${orcamentoData.cliente || 'Cliente'}</title>
+                        <style>
+                            body { 
+                                font-family: 'Courier New', monospace; 
+                                font-size: 12px; 
+                                margin: 0; 
+                                padding: 15px;
+                                line-height: 1.4;
+                            }
+                            .conteudo-material { white-space: pre-line; }
+                            @media print {
+                                body { margin: 0; padding: 10px; }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="conteudo-material">${conteudo}</div>
+                        <script>
+                            window.onload = function() {
+                                window.print();
+                                setTimeout(() => window.close(), 1000);
+                            };
+                        <\/script>
+                    </body>
+                    </html>
+                `);
+                janelaImpressao.document.close();
+
+                mostrarAlerta('✅ Lista de material enviada para impressão!', 'success');
+                
+            } catch (error) {
+                console.error('❌ Erro na impressão:', error);
+                mostrarAlerta('❌ Erro na impressão: ' + error.message, 'error');
+            }
+        }
+
+        function exportarMaterialObra() {
+            try {
+                const conteudo = document.getElementById('materialPreview').textContent;
+                const blob = new Blob([conteudo], { type: 'text/plain; charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `material_obra_${orcamentoData.cliente || 'cliente'}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.txt`;
+                link.click();
+                
+                URL.revokeObjectURL(url);
+                mostrarAlerta('✅ Lista de material exportada com sucesso!', 'success');
+                
+            } catch (error) {
+                console.error('❌ Erro ao exportar material:', error);
+                mostrarAlerta('❌ Erro ao exportar material: ' + error.message, 'error');
+            }
+        }
+
+        // =============================================================================
+        // FUNÇÕES AUXILIARES
+        // =============================================================================
+        function mostrarAlerta(mensagem, tipo) {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${tipo}`;
+            alert.textContent = mensagem;
+            
+            container.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        function formatarData(data) {
+            if (!data) return 'Data inválida';
+            // Se já estiver no formato dd/mm/yyyy
+            if (data.includes('/') && data.length === 10) return data;
+            
+            let dataObj;
+            // Se estiver no formato ISO (2025-10-30T...)
+            if (data.includes('T')) {
+                dataObj = new Date(data);
+            } 
+            // Se estiver no formato YYYY-MM-DD
+            else if (data.includes('-') && data.length === 10) {
+                const [ano, mes, dia] = data.split('-');
+                dataObj = new Date(ano, mes - 1, dia);
+            } 
+            // Se for um objeto Date
+            else if (data instanceof Date) {
+                 dataObj = data;
+            } 
+            // Tenta criar uma data
+            else {
+                dataObj = new Date(data);
+            }
+
+            // Verifica se a data é válida
+            if (isNaN(dataObj.getTime())) {
+                return data; // Retorna o original se for inválido
+            }
+
+            // Adiciona 1 dia (ajuste comum para fuso horário UTC)
+            dataObj.setDate(dataObj.getDate() + 1);
+            
+            const dia = String(dataObj.getDate()).padStart(2, '0');
+            const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
+            const ano = dataObj.getFullYear();
+            
+            return `${dia}/${mes}/${ano}`;
+        }
+    </script>
+</body>
+</html>
