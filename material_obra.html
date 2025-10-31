@@ -690,15 +690,15 @@
             let conteudo = '';
             
             // Cabeçalho
-            conteudo += '═'.repeat(60) + '\n';
+            conteudo += '═'.repeat(50) + '\n';
             conteudo += ' '.repeat(15) + '** MATERIAL DA OBRA **' + '\n';
-            conteudo += '═'.repeat(60) + '\n\n';
+            conteudo += '═'.repeat(50) + '\n\n';
             
             // Dados do orçamento
             conteudo += 'CLIENTE: ' + (orcamentoData.cliente || 'Não informado') + '\n';
             conteudo += 'LOCAL: ' + (orcamentoData.localizacao || 'Não informado') + '\n';
             conteudo += 'DATA: ' + (orcamentoData.data ? formatarData(orcamentoData.data) : new Date().toLocaleDateString('pt-BR')) + '\n';
-            conteudo += '─'.repeat(60) + '\n\n';
+            conteudo += '─'.repeat(50) + '\n\n';
             
             // Lista de material por categoria
             let totalGeral = 0;
@@ -709,7 +709,7 @@
             } else {
                 categorias.forEach(categoria => {
                     conteudo += `** ${categoria.toUpperCase()} **\n`;
-                    conteudo += '─'.repeat(60) + '\n';
+                    conteudo += '─'.repeat(50) + '\n';
                     
                     let totalCategoria = 0;
                     const itens = materialAgrupado[categoria];
@@ -730,14 +730,14 @@
                 });
                 
                 // Total geral
-                conteudo += '═'.repeat(60) + '\n';
+                conteudo += '═'.repeat(50) + '\n';
                 conteudo += `TOTAL GERAL: R$ ${totalGeral.toFixed(2)}\n`;
-                conteudo += '═'.repeat(60) + '\n\n';
+                conteudo += '═'.repeat(50) + '\n\n';
             }
             
             // Observações
             conteudo += 'OBS: Esta lista não inclui vidros e perfis, que possuem relatórios separados.\n';
-            conteudo += '─'.repeat(60) + '\n';
+            conteudo += '─'.repeat(50) + '\n';
             conteudo += 'Gerado em: ' + new Date().toLocaleString('pt-BR') + '\n';
             
             preview.textContent = conteudo;
