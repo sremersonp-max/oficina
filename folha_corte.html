@@ -229,22 +229,22 @@
 
             // --- Geração do Conteúdo TXT (Formato Texto Puro) ---
             let outputText = '';
-            outputText += "========================================\n";
-            outputText += pad("LISTA DE CORTES - OFICINA", 40, 'center') + "\n";
-            outputText += "========================================\n\n";
+            outputText += "================================\n";
+            outputText += pad("LISTA DE CORTES - OFICINA", 35, 'center') + "\n";
+            outputText += "================================\n\n";
 
             outputText += "CLIENTE: " + (orcamento.cliente || '---').toUpperCase().substring(0, 31) + "\n";
             outputText += "LOCAL:   " + (orcamento.localizacao || '---').toUpperCase().substring(0, 31) + "\n";
             outputText += "ORC # " + (orcamento.id || 'N/A') + " | DATA: " + (orcamento.data || '---') + "\n";
-            outputText += "\n========================================\n";
+            outputText += "\n================================\n";
             
             const chavesPerfil = Array.from(lastProcessedCuts.keys()).sort();
             
             if (chavesPerfil.length === 0) {
-                outputText += pad("NENHUM PERFIL PARA CORTE ENCONTRADO", 40, 'center') + "\n";
+                outputText += pad("NENHUM PERFIL PARA CORTE ENCONTRADO", 35, 'center') + "\n";
             } else {
                 outputText += " " + pad("MEDIDA(MM)", 15, 'center') + pad("QTD", 10, 'center') + "  PERFIL/COR\n";
-                outputText += "----------------------------------------\n";
+                outputText += "--------------------------------\n";
 
                 chavesPerfil.forEach(chave => {
                     const cortesDoPerfil = lastProcessedCuts.get(chave);
@@ -262,8 +262,8 @@
                 });
             }
 
-            outputText += "\n========================================\n";
-            outputText += pad("FIM DO RELATÓRIO", 40, 'center') + "\n";
+            outputText += "\n================================\n";
+            outputText += pad("FIM DO RELATÓRIO", 35, 'center') + "\n";
             
             // --- DOWNLOAD DO ARQUIVO ---
             const filename = `CORTES_${orcamento.cliente.replace(/[^a-zA-Z0-9]/g, '_')}_${orcamento.id}.txt`;
@@ -505,3 +505,4 @@
     </script>
 </body>
 </html>
+
