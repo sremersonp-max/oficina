@@ -230,7 +230,7 @@
             // --- Geração do Conteúdo TXT (Formato Texto Puro) ---
             let outputText = '';
             outputText += "================================\n";
-            outputText += pad("LISTA DE CORTES - OFICINA", 1, 'center') + "\n";
+            outputText += pad("LISTA DE CORTES - OFICINA", 32, 'left') + "\n";
             outputText += "================================\n\n";
 
             outputText += "CLIENTE: " + (orcamento.cliente || '---').toUpperCase().substring(0, 31) + "\n";
@@ -505,6 +505,7 @@
     </script>
 </body>
 </html>
+
 
 
 
