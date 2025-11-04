@@ -945,20 +945,41 @@
         }
         // FIM calcularPrecoProduto
 
-        // INÍCIO calcularQuantidadeFormula
-        function calcularQuantidadeFormula(formula, L, A) {
-            if (!formula || formula.trim() === '') return 1;
-            const formulaLower = formula.toLowerCase().trim();
-            let expressao = formulaLower.replace(/l/g, L.toString()).replace(/a/g, A.toString());
-            try {
-                const resultado = new Function(`return ${expressao}`)();
-                return parseFloat(resultado) || 0;
-            } catch (error) {
-                 console.error(`Erro ao avaliar fórmula "${formula}" com L=${L}, A=${A} -> "${expressao}"`, error);
-                throw new Error(`Fórmula inválida: "${formula}"`);
-            }
-        }
-        // FIM calcularQuantidadeFormula
+     // INÍCIO calcularQuantidadeFormula - VERSÃO DEBUG
+function calcularQuantidadeFormula(formula, L, A) {
+    if (!formula || formula.trim() === '') return 1;
+    
+    try {
+        console.log(`🔧 Calculando fórmula: "${formula}" com L=${L}, A=${A}`);
+        
+        const L_val = Number(L);
+        const A_val = Number(A);
+        
+        // DEBUG: Mostra os valores
+        console.log(`🔧 Valores: L_val=${L_val}, A_val=${A_val}`);
+        
+        // Substitui L e A - IMPORTANTE: manter como números no código
+        let expr = formula
+            .replace(/L/g, L_val)
+            .replace(/A/g, A_val);
+        
+        console.log(`🔧 Expressão final: "${expr}"`);
+        
+        // Calcula
+        const result = eval(expr);
+        console.log(`🔧 Resultado bruto: ${result}`);
+        
+        const resultadoFinal = Number(result) || 0;
+        console.log(`✅ Resultado final: ${resultadoFinal}`);
+        
+        return resultadoFinal;
+        
+    } catch (error) {
+        console.error(`❌ Erro fórmula: "${formula}"`, error);
+        return 0;
+    }
+}
+// FIM calcularQuantidadeFormula
 
         // INÍCIO atualizarInterfaceProduto
         function atualizarInterfaceProduto(produtoDivId, produtoOrcamento, nomeProduto) {
